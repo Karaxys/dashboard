@@ -70,7 +70,7 @@ const data = {
       items: [
         {
           title: "Logs",
-          url: "#",
+          url: "/dashboard/logs",
         },
         {
           title: "Starred",
@@ -85,7 +85,7 @@ const data = {
       items: [
         {
           title: "Scan",
-          url: "#",
+          url: "/dashboard/scan",
         },
         {
           title: "Results",

@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,7 +22,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { RefreshCcw, Search, Server, ChevronLeft, ChevronRight, Clock } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { RefreshCcw, Search, Server, ChevronLeft, ChevronRight, Clock, FilterX } from "lucide-react"
 
 interface ApiInventory {
   ID: string
@@ -50,17 +58,37 @@ interface PaginationInfo {
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<ApiInventory[]>([])
+  const [allLogs, setAllLogs] = useState<ApiInventory[]>([])
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const limit = 10
+  const [limit, setLimit] = useState("10")
+  const [searchPath, setSearchPath] = useState("")
+  const [searchUrl, setSearchUrl] = useState("")
+  const [methodFilter, setMethodFilter] = useState("ALL")
+  const [debouncedPath, setDebouncedPath] = useState("")
+  const [debouncedUrl, setDebouncedUrl] = useState("")
+  const hasActiveFilters = Boolean(debouncedPath || debouncedUrl || methodFilter !== "ALL")
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedPath(searchPath)
+      setDebouncedUrl(searchUrl)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchPath, searchUrl])
 
   const fetchLogs = async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`http://localhost:8081/inventory?page=${currentPage}&limit=${limit}`)     
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit,
+      })
+
+      const res = await fetch(`http://localhost:8081/inventory?${queryParams.toString()}`)     
       if (!res.ok) {
         throw new Error("Failed to fetch inventory logs")
       }
@@ -82,9 +110,90 @@ export default function LogsPage() {
     }
   }
 
+  const fetchAllLogs = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const pageSize = 200
+      let page = 1
+      let totalPages = 1
+      const aggregated: ApiInventory[] = []
+      while (page <= totalPages) {
+        const res = await fetch(`http://localhost:8081/inventory?page=${page}&limit=${pageSize}`)
+        if (!res.ok) {
+          throw new Error("Failed to fetch inventory logs")
+        }
+        const responseData = await res.json()
+        aggregated.push(...(responseData.data || []))
+        totalPages = responseData.total_pages || 1
+        page += 1
+      }
+      setAllLogs(aggregated)
+    } catch (err: any) {
+      setError(err.message || "An error occurred while fetching logs.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    fetchLogs()
-  }, [currentPage])
+    if (!hasActiveFilters) {
+      fetchLogs()
+    }
+  }, [currentPage, limit, hasActiveFilters])
+  useEffect(() => {
+    if (hasActiveFilters && allLogs.length === 0) {
+      fetchAllLogs()
+    }
+  }, [hasActiveFilters, allLogs.length])
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedPath, debouncedUrl, methodFilter, limit])
+  const filteredLogs = useMemo(() => {
+    const sourceLogs = hasActiveFilters ? allLogs : logs
+    return sourceLogs.filter(log => {
+      const matchPath = log.PathPattern.toLowerCase().includes(debouncedPath.toLowerCase())
+      const matchUrl = log.BaseURL.toLowerCase().includes(debouncedUrl.toLowerCase())
+      const matchMethod = methodFilter === "ALL" || log.Method === methodFilter
+      return matchPath && matchUrl && matchMethod
+    })
+  }, [hasActiveFilters, allLogs, logs, debouncedPath, debouncedUrl, methodFilter])
+  const filteredPagination = useMemo<PaginationInfo>(() => {
+    const pageSize = Number(limit)
+    const total = filteredLogs.length
+    const total_pages = Math.max(1, Math.ceil(total / pageSize))
+    const page = Math.min(currentPage, total_pages)
+    return {
+      total,
+      page,
+      limit: pageSize,
+      total_pages,
+      offset: (page - 1) * pageSize,
+    }
+  }, [filteredLogs.length, currentPage, limit])
+
+  const effectivePagination = hasActiveFilters ? filteredPagination : pagination
+  const displayedLogs = useMemo(() => {
+    if (!hasActiveFilters) {
+      return filteredLogs
+    }
+    const start = (filteredPagination.page - 1) * filteredPagination.limit
+    const end = start + filteredPagination.limit
+    return filteredLogs.slice(start, end)
+  }, [hasActiveFilters, filteredLogs, filteredPagination.page, filteredPagination.limit])
+
+  useEffect(() => {
+    if (!hasActiveFilters) return
+    if (currentPage > filteredPagination.total_pages) {
+      setCurrentPage(filteredPagination.total_pages)
+    }
+  }, [hasActiveFilters, currentPage, filteredPagination.total_pages])
+
+  const clearFilters = () => {
+    setSearchPath("")
+    setSearchUrl("")
+    setMethodFilter("ALL")
+  }
 
   const getMethodColor = (method: string) => {
     switch (method) {
@@ -106,7 +215,7 @@ export default function LogsPage() {
 
   return (
     <div className="glass-page min-h-full">
-      {/* Header*/}
+      {/* Header */}
       <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
         <div className="flex w-full items-center gap-3 px-4">
           <div className="flex items-center gap-2">
@@ -131,7 +240,7 @@ export default function LogsPage() {
         </div>
       </header>
 
-      {/*Main*/}
+      {/* Main */}
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <Card className="glass-panel flex-1 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-4">
@@ -148,7 +257,7 @@ export default function LogsPage() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={fetchLogs} 
+                onClick={hasActiveFilters ? fetchAllLogs : fetchLogs}
                 disabled={loading}
                 className="glass-chip border-white/10"
               >
@@ -157,6 +266,53 @@ export default function LogsPage() {
               </Button>
             </div>
           </CardHeader>
+
+          {/* Filters*/}
+          <div className="flex flex-col sm:flex-row gap-3 p-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search endpoints (e.g. /api/users)..." 
+                value={searchPath}
+                onChange={(e) => setSearchPath(e.target.value)}
+                className="pl-9 bg-black/20 border-white/10 text-slate-200 placeholder:text-muted-foreground/50"
+              />
+            </div>
+            <div className="flex-1">
+              <Input 
+                placeholder="Search target URL..." 
+                value={searchUrl}
+                onChange={(e) => setSearchUrl(e.target.value)}
+                className="bg-black/20 border-white/10 text-slate-200 placeholder:text-muted-foreground/50"
+              />
+            </div>
+            <div className="w-full sm:w-45">
+              <Select value={methodFilter} onValueChange={setMethodFilter}>
+                <SelectTrigger className="bg-black/20 border-white/10 text-slate-200">
+                  <SelectValue placeholder="Method" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
+                  <SelectItem value="ALL">All Methods</SelectItem>
+                  <SelectItem value="GET">GET</SelectItem>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="DELETE">DELETE</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(searchPath || searchUrl || methodFilter !== "ALL") && (
+              <Button 
+                variant="ghost" 
+                onClick={clearFilters}
+                className="text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
+              >
+                <FilterX className="size-4 mr-2" />
+                Clear
+              </Button>
+            )}
+          </div>
+
           <CardContent className="p-0 flex-1">
             {error ? (
               <div className="flex flex-col items-center justify-center p-8 text-center text-rose-400">
@@ -164,11 +320,11 @@ export default function LogsPage() {
                 <Button variant="link" onClick={fetchLogs} className="text-blue-400 mt-2">Try Again</Button>
               </div>
             ) : (
-              <div className="relative overflow-x-auto px-4">
+              <div className="relative overflow-x-auto px-4 py-2">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-white/5 hover:bg-transparent">
-                      <TableHead className="w-25 rounded-l-lg bg-white/5">Method</TableHead>
+                      <TableHead className="w-24 rounded-l-lg bg-white/5">Method</TableHead>
                       <TableHead className="bg-white/5">Path Pattern</TableHead>
                       <TableHead className="bg-white/5">Base URL</TableHead>
                       <TableHead className="bg-white/5">Last Seen</TableHead>
@@ -186,17 +342,17 @@ export default function LogsPage() {
                           <TableCell className="w-40 text-left"><Skeleton className="h-8 w-20 bg-white/10" /></TableCell>
                         </TableRow>
                       ))
-                    ) : logs.length === 0 ? (
+                    ) : displayedLogs.length === 0 ? (
                       <TableRow className="border-white/5 hover:bg-transparent">
                         <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <Search className="size-6 text-white/20" />
-                            <p>No endpoints captured yet.</p>
+                            <p>No endpoints found matching your filters.</p>
                           </div>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      logs.map((log) => (
+                      displayedLogs.map((log) => (
                         <TableRow key={log.ID} className="border-white/5 hover:bg-white/5 transition-colors">
                           <TableCell className="font-medium">
                             <Badge variant="outline" className={getMethodColor(log.Method)}>
@@ -228,18 +384,30 @@ export default function LogsPage() {
               </div>
             )}
             
-            {/*Pagination Controls*/}
-            {!loading && !error && pagination && pagination.total > 0 && (
-              <div className="flex items-center justify-between border-t border-white/5 p-4">
-                <p className="text-sm text-muted-foreground">
-                  Showing <span className="text-slate-200 font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="text-slate-200 font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="text-slate-200 font-medium">{pagination.total}</span> endpoints
-                </p>
+            {!loading && !error && effectivePagination && effectivePagination.total > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between border-t border-white/5 p-4 gap-4">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <Select value={limit} onValueChange={setLimit}>
+                    <SelectTrigger className="w-20 h-8 bg-black/20 border-white/10 text-slate-200">
+                      <SelectValue placeholder="10" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="hidden sm:inline">
+                    Showing <span className="text-slate-200 font-medium">{(effectivePagination.page - 1) * effectivePagination.limit + 1}</span> to <span className="text-slate-200 font-medium">{Math.min(effectivePagination.page * effectivePagination.limit, effectivePagination.total)}</span> of <span className="text-slate-200 font-medium">{effectivePagination.total}</span> endpoints
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="glass-chip border-white/10"
-                    disabled={pagination.page <= 1}
+                    disabled={effectivePagination.page <= 1}
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   >
                     <ChevronLeft className="size-4 mr-1" />
@@ -249,7 +417,7 @@ export default function LogsPage() {
                     variant="outline" 
                     size="sm" 
                     className="glass-chip border-white/10"
-                    disabled={pagination.page >= pagination.total_pages}
+                    disabled={effectivePagination.page >= effectivePagination.total_pages}
                     onClick={() => setCurrentPage(p => p + 1)}
                   >
                     Next

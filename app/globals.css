@@ -127,7 +127,7 @@
 
 @layer utilities {
   .glass-page {
-    @apply bg-background;
+    @apply bg-slate-950;
     background-image: none;
   }
 

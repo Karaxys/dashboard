@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { RefreshCcw, Search, Server, ChevronLeft, ChevronRight, Clock, FilterX } from "lucide-react"
+import Link from "next/link"
 
 interface ApiInventory {
   ID: string
@@ -407,8 +408,10 @@ export default function LogsPage() {
                           </TableCell>
                           <TableCell className="w-40">
                             <div className="flex justify-end pr-4">
-                              <Button variant="ghost" size="sm" className="hover:bg-white/10 px-3">
-                                View Details
+                              <Button variant="ghost" size="sm" className="px-3 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300">
+                                <Link href={`/dashboard/logs/${log.ID}`} className="text-inherit">
+                                  View Details
+                                </Link>
                               </Button>
                             </div>
                           </TableCell>

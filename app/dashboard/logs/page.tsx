@@ -35,6 +35,7 @@ import { RefreshCcw, Search, Server, ChevronLeft, ChevronRight, Clock, FilterX }
 interface ApiInventory {
   ID: string
   Method: string
+  RiskLevel: string
   BaseURL: string
   PathPattern: string
   OriginalPath: string
@@ -67,9 +68,12 @@ export default function LogsPage() {
   const [searchPath, setSearchPath] = useState("")
   const [searchUrl, setSearchUrl] = useState("")
   const [methodFilter, setMethodFilter] = useState("ALL")
+  const [riskFilter, setRiskFilter] = useState("ALL")
   const [debouncedPath, setDebouncedPath] = useState("")
   const [debouncedUrl, setDebouncedUrl] = useState("")
-  const hasActiveFilters = Boolean(debouncedPath || debouncedUrl || methodFilter !== "ALL")
+  const hasActiveFilters = Boolean(
+    debouncedPath || debouncedUrl || methodFilter !== "ALL" || riskFilter !== "ALL"
+  )
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -148,16 +152,17 @@ export default function LogsPage() {
   }, [hasActiveFilters, allLogs.length])
   useEffect(() => {
     setCurrentPage(1)
-  }, [debouncedPath, debouncedUrl, methodFilter, limit])
+  }, [debouncedPath, debouncedUrl, methodFilter, riskFilter, limit])
   const filteredLogs = useMemo(() => {
     const sourceLogs = hasActiveFilters ? allLogs : logs
     return sourceLogs.filter(log => {
       const matchPath = log.PathPattern.toLowerCase().includes(debouncedPath.toLowerCase())
       const matchUrl = log.BaseURL.toLowerCase().includes(debouncedUrl.toLowerCase())
       const matchMethod = methodFilter === "ALL" || log.Method === methodFilter
-      return matchPath && matchUrl && matchMethod
+      const matchRisk = riskFilter === "ALL" || (log.RiskLevel || "").toUpperCase() === riskFilter
+      return matchPath && matchUrl && matchMethod && matchRisk
     })
-  }, [hasActiveFilters, allLogs, logs, debouncedPath, debouncedUrl, methodFilter])
+  }, [hasActiveFilters, allLogs, logs, debouncedPath, debouncedUrl, methodFilter, riskFilter])
   const filteredPagination = useMemo<PaginationInfo>(() => {
     const pageSize = Number(limit)
     const total = filteredLogs.length
@@ -193,6 +198,7 @@ export default function LogsPage() {
     setSearchPath("")
     setSearchUrl("")
     setMethodFilter("ALL")
+    setRiskFilter("ALL")
   }
 
   const getMethodColor = (method: string) => {
@@ -202,6 +208,16 @@ export default function LogsPage() {
       case "PUT": return "bg-amber-500/10 text-amber-400 border-amber-500/20"
       case "DELETE": return "bg-rose-500/10 text-rose-400 border-rose-500/20"
       case "PATCH": return "bg-purple-500/10 text-purple-400 border-purple-500/20"
+      default: return "bg-slate-500/10 text-slate-400 border-slate-500/20"
+    }
+  }
+
+  const getRiskColor = (risk: string) => {
+    switch ((risk || "").toUpperCase()) {
+      case "CRITICAL": return "bg-rose-500/10 text-rose-400 border-rose-500/20"
+      case "HIGH": return "bg-orange-500/10 text-orange-400 border-orange-500/20"
+      case "MEDIUM": return "bg-amber-500/10 text-amber-400 border-amber-500/20"
+      case "LOW": return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
       default: return "bg-slate-500/10 text-slate-400 border-slate-500/20"
     }
   }
@@ -286,22 +302,33 @@ export default function LogsPage() {
                 className="bg-black/20 border-white/10 text-slate-200 placeholder:text-muted-foreground/50"
               />
             </div>
-            <div className="w-full sm:w-45">
-              <Select value={methodFilter} onValueChange={setMethodFilter}>
-                <SelectTrigger className="bg-black/20 border-white/10 text-slate-200">
-                  <SelectValue placeholder="Method" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
-                  <SelectItem value="ALL">All Methods</SelectItem>
-                  <SelectItem value="GET">GET</SelectItem>
-                  <SelectItem value="POST">POST</SelectItem>
-                  <SelectItem value="PUT">PUT</SelectItem>
-                  <SelectItem value="DELETE">DELETE</SelectItem>
-                  <SelectItem value="PATCH">PATCH</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {(searchPath || searchUrl || methodFilter !== "ALL") && (
+            <Select value={methodFilter} onValueChange={setMethodFilter}>
+              <SelectTrigger className="w-35 bg-black/20 border-white/10 text-slate-200">
+                <SelectValue placeholder="Method" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
+                <SelectItem value="ALL">All Methods</SelectItem>
+                <SelectItem value="GET">GET</SelectItem>
+                <SelectItem value="POST">POST</SelectItem>
+                <SelectItem value="PUT">PUT</SelectItem>
+                <SelectItem value="DELETE">DELETE</SelectItem>
+                <SelectItem value="PATCH">PATCH</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={riskFilter} onValueChange={setRiskFilter}>
+              <SelectTrigger className="w-30 bg-black/20 border-white/10 text-slate-200">
+                <SelectValue placeholder="Risk" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
+                <SelectItem value="ALL">All Risks</SelectItem>
+                <SelectItem value="CRITICAL">Critical</SelectItem>
+                <SelectItem value="HIGH">High</SelectItem>
+                <SelectItem value="MEDIUM">Medium</SelectItem>
+                <SelectItem value="LOW">Low</SelectItem>
+              </SelectContent>
+            </Select>
+            {(searchPath || searchUrl || methodFilter !== "ALL" || riskFilter !== "ALL") && (
               <Button 
                 variant="ghost" 
                 onClick={clearFilters}
@@ -325,10 +352,11 @@ export default function LogsPage() {
                   <TableHeader>
                     <TableRow className="border-white/5 hover:bg-transparent">
                       <TableHead className="w-24 rounded-l-lg bg-white/5">Method</TableHead>
+                      <TableHead className="w-28 bg-white/5">Risk</TableHead>
                       <TableHead className="bg-white/5">Path Pattern</TableHead>
                       <TableHead className="bg-white/5">Base URL</TableHead>
                       <TableHead className="bg-white/5">Last Seen</TableHead>
-                      <TableHead className="w-40 text-left rounded-r-lg bg-white/5">Actions</TableHead>
+                      <TableHead className="w-40 pl-12 rounded-r-lg bg-white/5">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -336,6 +364,7 @@ export default function LogsPage() {
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i} className="border-white/5">
                           <TableCell><Skeleton className="h-6 w-16 bg-white/10" /></TableCell>
+                          <TableCell><Skeleton className="h-6 w-20 bg-white/10" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-48 bg-white/10" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-32 bg-white/10" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-24 bg-white/10" /></TableCell>
@@ -344,7 +373,7 @@ export default function LogsPage() {
                       ))
                     ) : displayedLogs.length === 0 ? (
                       <TableRow className="border-white/5 hover:bg-transparent">
-                        <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <Search className="size-6 text-white/20" />
                             <p>No endpoints found matching your filters.</p>
@@ -359,6 +388,11 @@ export default function LogsPage() {
                               {log.Method}
                             </Badge>
                           </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={getRiskColor(log.RiskLevel)}>
+                              {log.RiskLevel || "Unknown"}
+                            </Badge>
+                          </TableCell>
                           <TableCell className="font-mono text-sm text-slate-200">
                             {log.PathPattern}
                           </TableCell>
@@ -371,10 +405,12 @@ export default function LogsPage() {
                               {formatDate(log.UpdatedAt || log.CreatedAt)}
                             </div>
                           </TableCell>
-                          <TableCell className="w-40 text-left">
-                            <Button variant="ghost" size="sm" className="w-full justify-start px-0 hover:bg-white/10">
-                              View Details
-                            </Button>
+                          <TableCell className="w-40">
+                            <div className="flex justify-end pr-4">
+                              <Button variant="ghost" size="sm" className="hover:bg-white/10 px-3">
+                                View Details
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))

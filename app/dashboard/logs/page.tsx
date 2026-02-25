@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect, useState, useMemo } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -58,23 +59,71 @@ interface PaginationInfo {
   offset: number
 }
 
+const PAGE_SIZE_OPTIONS = ["10", "20", "50", "100"] as const
+const METHOD_OPTIONS = ["ALL", "GET", "POST", "PUT", "DELETE", "PATCH"] as const
+const RISK_OPTIONS = ["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW"] as const
+
+const parsePage = (value: string | null) => {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1
+}
+
+const parseLimit = (value: string | null) => {
+  return PAGE_SIZE_OPTIONS.includes((value || "") as (typeof PAGE_SIZE_OPTIONS)[number]) ? value! : "10"
+}
+
+const parseMethod = (value: string | null) => {
+  return METHOD_OPTIONS.includes((value || "") as (typeof METHOD_OPTIONS)[number]) ? value! : "ALL"
+}
+
+const parseRisk = (value: string | null) => {
+  return RISK_OPTIONS.includes((value || "") as (typeof RISK_OPTIONS)[number]) ? value! : "ALL"
+}
+
 export default function LogsPage() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const initialPage = useMemo(() => parsePage(searchParams.get("page")), [searchParams])
+  const initialLimit = useMemo(() => parseLimit(searchParams.get("limit")), [searchParams])
+  const initialPath = useMemo(() => searchParams.get("path") || "", [searchParams])
+  const initialUrl = useMemo(() => searchParams.get("url") || "", [searchParams])
+  const initialMethod = useMemo(() => parseMethod(searchParams.get("method")), [searchParams])
+  const initialRisk = useMemo(() => parseRisk(searchParams.get("risk")), [searchParams])
+
   const [logs, setLogs] = useState<ApiInventory[]>([])
   const [allLogs, setAllLogs] = useState<ApiInventory[]>([])
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [limit, setLimit] = useState("10")
-  const [searchPath, setSearchPath] = useState("")
-  const [searchUrl, setSearchUrl] = useState("")
-  const [methodFilter, setMethodFilter] = useState("ALL")
-  const [riskFilter, setRiskFilter] = useState("ALL")
-  const [debouncedPath, setDebouncedPath] = useState("")
-  const [debouncedUrl, setDebouncedUrl] = useState("")
+  const [currentPage, setCurrentPage] = useState(initialPage)
+  const [limit, setLimit] = useState(initialLimit)
+  const [searchPath, setSearchPath] = useState(initialPath)
+  const [searchUrl, setSearchUrl] = useState(initialUrl)
+  const [methodFilter, setMethodFilter] = useState(initialMethod)
+  const [riskFilter, setRiskFilter] = useState(initialRisk)
+  const [debouncedPath, setDebouncedPath] = useState(initialPath)
+  const [debouncedUrl, setDebouncedUrl] = useState(initialUrl)
   const hasActiveFilters = Boolean(
     debouncedPath || debouncedUrl || methodFilter !== "ALL" || riskFilter !== "ALL"
   )
+
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (currentPage > 1) params.set("page", currentPage.toString())
+    if (limit !== "10") params.set("limit", limit)
+    if (searchPath.trim()) params.set("path", searchPath.trim())
+    if (searchUrl.trim()) params.set("url", searchUrl.trim())
+    if (methodFilter !== "ALL") params.set("method", methodFilter)
+    if (riskFilter !== "ALL") params.set("risk", riskFilter)
+
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery) return
+
+    const target = nextQuery ? `${pathname}?${nextQuery}` : pathname
+    router.replace(target, { scroll: false })
+  }, [currentPage, limit, searchPath, searchUrl, methodFilter, riskFilter, pathname, router, searchParams])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -409,7 +458,14 @@ export default function LogsPage() {
                           <TableCell className="w-40">
                             <div className="flex justify-end pr-4">
                               <Button variant="ghost" size="sm" className="px-3 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300">
-                                <Link href={`/dashboard/logs/${log.ID}`} className="text-inherit">
+                                <Link
+                                  href={
+                                    searchParams.toString()
+                                      ? `/dashboard/logs/${log.ID}?${searchParams.toString()}`
+                                      : `/dashboard/logs/${log.ID}`
+                                  }
+                                  className="text-inherit"
+                                >
                                   View Details
                                 </Link>
                               </Button>

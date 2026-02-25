@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -40,7 +40,10 @@ interface ApiInventoryDetail {
 export default function LogDetailsPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const id = params.id as string
+  const listQuery = searchParams.toString()
+  const logsHref = listQuery ? `/dashboard/logs?${listQuery}` : "/dashboard/logs"
   const [log, setLog] = useState<ApiInventoryDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -148,7 +151,7 @@ export default function LogDetailsPage() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard/logs">Logs</BreadcrumbLink>
+                  <BreadcrumbLink href={logsHref}>Logs</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
@@ -163,7 +166,7 @@ export default function LogDetailsPage() {
       {/*Main*/}
       <div className="flex flex-1 flex-col gap-6 p-6 pt-0">        
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.back()} className="glass-chip border-white/10">
+          <Button variant="outline" size="icon" onClick={() => router.push(logsHref)} className="glass-chip border-white/10">
             <ArrowLeft className="size-4" />
           </Button>
           <div className="flex flex-1 items-start justify-between gap-4">

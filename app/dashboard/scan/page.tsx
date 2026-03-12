@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -23,13 +23,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import {
   Play, ShieldAlert, Target, KeyRound, Zap,
-  Info, CheckCircle2, AlertTriangle, Terminal,
-  Globe, Braces, Loader2
+  AlertTriangle, Terminal, Globe, Braces, Loader2,
+  ChevronDown, Copy, Check, ShieldCheck, ShieldX,
+  FileCode2, ExternalLink, Crosshair, FlaskConical, Radio, Code2
 } from "lucide-react"
 
 // Types
@@ -53,15 +58,15 @@ interface ApiInventory {
 }
 
 const TEST_CASES = [
-  { id: "BOLA", label: "BOLA (Auth Token Swap)", desc: "Check if User B can access User A's data." },
-  { id: "BFLA", label: "BFLA (Method Swapping)", desc: "Check if standard user can perform Admin actions." },
-  { id: "BROKEN_USER_AUTH", label: "Broken User Auth", desc: "Check if endpoint allows anonymous access." },
-  { id: "BOLA_PARAMETER_POLLUTION", label: "BOLA Parameter Pollution", desc: "Send duplicate IDs to confuse auth middleware." },
-  { id: "SWAGGER_CHECK", label: "Swagger Check", desc: "Find hidden API documentation." },
-  { id: "JWT_NONE_ALGO", label: "JWT None Algorithm", desc: "Check if server accepts unsigned JWT (alg: none)." },
-  { id: "JWT_INVALID_SIGNATURE", label: "JWT Invalid Signature", desc: "Check if server verifies cryptographic signature." },
-  { id: "OPEN_REDIRECT", label: "Open Redirect", desc: "Check if URL params can redirect to malicious sites." },
-  { id: "EXPOSED_METRICS", label: "Exposed Metrics", desc: "Find internal DevOps monitoring tools." }
+  { id: "BOLA", label: "BOLA", fullLabel: "Broken Object Level Authorization", desc: "Check if User B can access User A's data via token swap.", category: "Authorization" },
+  { id: "BFLA", label: "BFLA", fullLabel: "Broken Function Level Authorization", desc: "Check if standard user can perform Admin actions.", category: "Authorization" },
+  { id: "BROKEN_USER_AUTH", label: "Broken Auth", fullLabel: "Broken User Authentication", desc: "Check if endpoint allows anonymous access.", category: "Authentication" },
+  { id: "BOLA_PARAMETER_POLLUTION", label: "Param Pollution", fullLabel: "BOLA Parameter Pollution", desc: "Send duplicate IDs to confuse auth middleware.", category: "Authorization" },
+  { id: "SWAGGER_CHECK", label: "Swagger", fullLabel: "Swagger/OpenAPI Exposure", desc: "Find hidden API documentation endpoints.", category: "Information" },
+  { id: "JWT_NONE_ALGO", label: "JWT None", fullLabel: "JWT None Algorithm Attack", desc: "Check if server accepts unsigned JWT (alg: none).", category: "Authentication" },
+  { id: "JWT_INVALID_SIGNATURE", label: "JWT Sig", fullLabel: "JWT Invalid Signature", desc: "Check if server verifies cryptographic signature.", category: "Authentication" },
+  { id: "OPEN_REDIRECT", label: "Redirect", fullLabel: "Open Redirect", desc: "Check if URL params can redirect to malicious sites.", category: "Injection" },
+  { id: "EXPOSED_METRICS", label: "Metrics", fullLabel: "Exposed Metrics/Debug", desc: "Find internal DevOps monitoring endpoints.", category: "Information" }
 ]
 
 const SELECT_ENDPOINT_DEFAULT = "__SELECT_ENDPOINT__"
@@ -175,13 +180,33 @@ export default function ScanPage() {
 
   const getSeverityColor = (sev: string) => {
     switch (sev?.toLowerCase()) {
-      case "critical": return "bg-rose-500/10 text-rose-400 border-rose-500/20"
-      case "high":     return "bg-orange-500/10 text-orange-400 border-orange-500/20"
-      case "medium":   return "bg-amber-500/10 text-amber-400 border-amber-500/20"
-      case "low":      return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-      default:         return "bg-slate-500/10 text-slate-400 border-slate-500/20"
+      case "critical": return "bg-rose-500/15 text-rose-400 border-rose-500/30"
+      case "high":     return "bg-orange-500/15 text-orange-400 border-orange-500/30"
+      case "medium":   return "bg-amber-500/15 text-amber-400 border-amber-500/30"
+      case "low":      return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+      default:         return "bg-slate-500/15 text-slate-400 border-slate-500/30"
     }
   }
+
+  const getMethodColor = (method: string) => {
+    switch (method?.toUpperCase()) {
+      case "GET": return "text-blue-400 bg-blue-500/10 border-blue-500/20"
+      case "POST": return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+      case "PUT": return "text-amber-400 bg-amber-500/10 border-amber-500/20"
+      case "DELETE": return "text-rose-400 bg-rose-500/10 border-rose-500/20"
+      case "PATCH": return "text-purple-400 bg-purple-500/10 border-purple-500/20"
+      default: return "text-slate-400 bg-slate-500/10 border-slate-500/20"
+    }
+  }
+
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const selectedTestCase = TEST_CASES.find(t => t.id === testType)
 
   return (
     <div className="glass-page min-h-full">
@@ -210,34 +235,28 @@ export default function ScanPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-5 p-6 pt-2">
+      <div className="flex flex-1 flex-col gap-5 p-5 pt-0">
+        {/* Top Section - Scanner Config */}
+        <div className="grid gap-5 xl:grid-cols-3">
+          {/* Left - Configuration Form */}
+          <Card className="glass-panel border-white/10 xl:col-span-2">
+            <CardHeader className="pb-4 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20">
+                  <Crosshair className="size-5 text-rose-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Configure Scan</CardTitle>
+                  <CardDescription>Select target endpoint and vulnerability test</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
 
-        {/* Instructions Alert */}
-        <Alert className="bg-blue-500/10 border-blue-500/20 text-blue-100">
-          <Info className="size-4 text-blue-400" />
-          <AlertTitle className="text-sm font-semibold text-blue-400 tracking-wide">Scanner Instructions</AlertTitle>
-          <AlertDescription className="mt-2 text-sm text-blue-200/80 space-y-1">
-            <p>1. Select the target endpoint from the dropdown (or click 'Start Scan' from the Logs page).</p>
-            <p>2. Select the vulnerability Test Case you want to execute.</p>
-            <p>3. Dynamic fields will appear based on the test case (e.g., <strong>BOLA</strong> requires an attacker token from another user session, <strong>BFLA</strong> requires an attack method like DELETE).</p>
-            <p>4. Launch the scan and wait for the Nuclei engine to process the payloads.</p>
-          </AlertDescription>
-        </Alert>
-        <Card className="glass-panel bg-card/50 border-white/10">
-          {/* No border-b → no underline below the title */}
-          <CardHeader className="pb-1.5">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2.5">
-              <ShieldAlert className="size-5 text-rose-400" />
-              Configure Active Scan
-            </CardTitle>
-          </CardHeader>
-
-          <form onSubmit={handleStartScan}>
-            <CardContent className="space-y-5 pt-2">
-              <div className="grid gap-5 md:grid-cols-2">
-                {/* Endpoint Selection */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm text-slate-300">
+            <form onSubmit={handleStartScan}>
+              <CardContent className="space-y-6 pt-5">
+                {/* Target Selection */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2 text-sm font-medium text-slate-200">
                     <Target className="size-4 text-emerald-400" />
                     Target Endpoint
                   </Label>
@@ -248,31 +267,38 @@ export default function ScanPage() {
                     }
                     required
                   >
-                    <SelectTrigger className="bg-black/20 border-white/10 text-sm text-slate-200">
+                    <SelectTrigger className="h-11 bg-black/30 border-white/10 text-slate-200">
                       <SelectValue placeholder="Select an endpoint to scan" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-slate-200 max-h-75">
-                      <SelectItem value={SELECT_ENDPOINT_DEFAULT} className="text-sm text-muted-foreground">
-                        Select endpoint
+                    <SelectContent className="bg-slate-900 border-white/10 text-slate-200 max-h-80">
+                      <SelectItem value={SELECT_ENDPOINT_DEFAULT} className="text-muted-foreground">
+                        Select endpoint...
                       </SelectItem>
                       {endpoints.map(ep => (
-                        <SelectItem key={ep.ID} value={ep.ID} className="font-mono text-xs">
-                          <span className={`mr-2 font-bold ${
-                            ep.Method === "GET"    ? "text-blue-400"    :
-                            ep.Method === "POST"   ? "text-emerald-400" :
-                            ep.Method === "DELETE" ? "text-rose-400"    : "text-amber-400"
-                          }`}>{ep.Method}</span>
-                          {ep.PathPattern}
+                        <SelectItem key={ep.ID} value={ep.ID} className="py-2.5">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={`text-xs font-mono ${getMethodColor(ep.Method)}`}>
+                              {ep.Method}
+                            </Badge>
+                            <span className="font-mono text-sm">{ep.PathPattern}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+
+                  {selectedEndpointDetails && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-black/20 px-3 py-2 rounded-lg border border-white/5">
+                      <Globe className="size-3" />
+                      <span className="text-slate-400">{selectedEndpointDetails.BaseURL}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Test Case Selection */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm text-slate-300">
-                    <Zap className="size-4 text-purple-400" />
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2 text-sm font-medium text-slate-200">
+                    <FlaskConical className="size-4 text-purple-400" />
                     Vulnerability Test Case
                   </Label>
                   <Select
@@ -282,35 +308,46 @@ export default function ScanPage() {
                     }
                     required
                   >
-                    <SelectTrigger className="bg-black/20 border-white/10 text-sm text-slate-200">
+                    <SelectTrigger className="h-11 bg-black/30 border-white/10 text-slate-200">
                       <SelectValue placeholder="Select test case" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
-                      <SelectItem value={SELECT_TEST_CASE_DEFAULT} className="text-sm text-muted-foreground">
-                        Select test case
+                      <SelectItem value={SELECT_TEST_CASE_DEFAULT} className="text-muted-foreground">
+                        Select test case...
                       </SelectItem>
                       {TEST_CASES.map(tc => (
-                        <SelectItem key={tc.id} value={tc.id} className="text-sm">
-                          {tc.label}
+                        <SelectItem key={tc.id} value={tc.id} className="py-2.5">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/20">
+                              {tc.category}
+                            </Badge>
+                            <span>{tc.fullLabel}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {testType && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {TEST_CASES.find(t => t.id === testType)?.desc}
-                    </p>
+
+                  {selectedTestCase && (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-purple-500/5 border border-purple-500/10">
+                      <Zap className="size-4 text-purple-400 mt-0.5 shrink-0" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-purple-300">{selectedTestCase.fullLabel}</p>
+                        <p className="text-xs text-muted-foreground">{selectedTestCase.desc}</p>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* Dynamic Fields */}
-              <div className="grid gap-5 md:grid-cols-2">
+                {/* Dynamic Fields */}
                 {needsAttackMethod && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                    <Label className="text-sm text-slate-300">Attack Method (for Method Swapping)</Label>
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Label className="flex items-center gap-2 text-sm font-medium text-slate-200">
+                      <Code2 className="size-4 text-amber-400" />
+                      Attack Method
+                    </Label>
                     <Select value={attackMethod} onValueChange={setAttackMethod}>
-                      <SelectTrigger className="bg-black/20 border-white/10 text-sm text-slate-200">
+                      <SelectTrigger className="h-11 bg-black/30 border-white/10 text-slate-200">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
@@ -320,12 +357,15 @@ export default function ScanPage() {
                         <SelectItem value="POST">POST</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      HTTP method to use for the privilege escalation test
+                    </p>
                   </div>
                 )}
 
                 {needsAttackerToken && (
-                  <div className="space-y-2 md:col-span-2 animate-in fade-in slide-in-from-top-2">
-                    <Label className="flex items-center gap-2 text-sm text-slate-300">
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Label className="flex items-center gap-2 text-sm font-medium text-slate-200">
                       <KeyRound className="size-4 text-amber-400" />
                       Attacker Auth Token
                     </Label>
@@ -333,202 +373,375 @@ export default function ScanPage() {
                       required
                       value={attackerToken}
                       onChange={(e) => setAttackerToken(e.target.value)}
-                      placeholder="Bearer eyJhbGciOiJIUzI1..."
-                      className="h-20 resize-none bg-black/20 border-white/10 text-slate-200 font-mono text-xs"
+                      placeholder="Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      className="h-24 resize-none bg-black/30 border-white/10 text-slate-200 font-mono text-xs placeholder:text-muted-foreground/50"
                     />
                     <p className="text-xs text-muted-foreground">
                       {testType === "BOLA_PARAMETER_POLLUTION"
-                        ? "Paste your own authorization token"
-                        : "Paste the authorization token of a secondary user to test for privilege escalation."}
+                        ? "Paste your own authorization token for the parameter pollution test"
+                        : "Paste the authorization token of another user to test for privilege escalation"}
                     </p>
                   </div>
                 )}
-              </div>
-              <div className="pt-1">
-                <Button
-                  type="submit"
-                  disabled={isScanning || !inventoryId || !testType}
-                  className="w-full sm:w-auto glass-chip bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 border border-rose-500/30 text-sm font-semibold"
-                >
-                  {isScanning ? (
-                    <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                      Executing Nuclei Scan...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="size-4 mr-2" />
-                      Launch Scanner
-                    </>
-                  )}
-                </Button>
-              </div>
 
-            </CardContent>
-          </form>
-        </Card>
+                {/* Launch Button */}
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    disabled={isScanning || !inventoryId || !testType}
+                    className="h-11 px-6 bg-linear-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white border-0 font-semibold shadow-lg shadow-rose-500/20 disabled:opacity-50 disabled:shadow-none"
+                  >
+                    {isScanning ? (
+                      <>
+                        <Loader2 className="size-4 mr-2 animate-spin" />
+                        Executing Scan...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="size-4 mr-2" />
+                        Launch Scanner
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </form>
+          </Card>
 
+          {/* Right - Quick Stats / Status */}
+          <div className="space-y-5">
+            <Card className="glass-panel border-white/10">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4">
+                  <div className={`flex size-12 items-center justify-center rounded-xl border ${
+                    isScanning ? "bg-amber-500/10 border-amber-500/20" : 
+                    scanResults && scanResults.length > 0 ? "bg-rose-500/10 border-rose-500/20" :
+                    scanResults && scanResults.length === 0 ? "bg-emerald-500/10 border-emerald-500/20" :
+                    "bg-slate-500/10 border-white/10"
+                  }`}>
+                    {isScanning ? <Radio className="size-5 text-amber-400 animate-pulse" /> :
+                     scanResults && scanResults.length > 0 ? <ShieldX className="size-5 text-rose-400" /> :
+                     scanResults && scanResults.length === 0 ? <ShieldCheck className="size-5 text-emerald-400" /> :
+                     <ShieldAlert className="size-5 text-slate-400" />}
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Scanner Status</p>
+                    <p className={`text-lg font-semibold ${
+                      isScanning ? "text-amber-400" :
+                      scanResults && scanResults.length > 0 ? "text-rose-400" :
+                      scanResults && scanResults.length === 0 ? "text-emerald-400" :
+                      "text-slate-300"
+                    }`}>
+                      {isScanning ? "Scanning..." :
+                       scanResults && scanResults.length > 0 ? `${scanResults.length} Finding${scanResults.length > 1 ? "s" : ""}` :
+                       scanResults && scanResults.length === 0 ? "Secure" :
+                       "Ready"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-panel border-white/10">
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <FileCode2 className="size-5 text-blue-400" />
+                  <p className="text-sm font-medium text-slate-200">Quick Tips</p>
+                </div>
+                <ul className="space-y-2 text-xs text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-0.5">•</span>
+                    <span><strong className="text-slate-300">BOLA</strong> requires an attacker token from another user session</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-0.5">•</span>
+                    <span><strong className="text-slate-300">BFLA</strong> tests method swapping (e.g., GET → DELETE)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-0.5">•</span>
+                    <span><strong className="text-slate-300">JWT tests</strong> check for signature validation flaws</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {inventoryId && (
+              <Button variant="outline" size="sm" asChild className="w-full glass-chip border-white/10 text-slate-300 hover:text-white">
+                <Link href={`/dashboard/results?inventory_id=${inventoryId}`}>
+                  View Past Results
+                  <ExternalLink className="ml-2 size-4" />
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Section - Analysis Panels */}
         <div className="grid gap-5 lg:grid-cols-2">
-          {/* Left — Target Details */}
-          <Card className="glass-panel bg-card/50 border-white/10 h-125 flex flex-col">
-            <CardHeader className="pb-1.5">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2.5">
-                <Globe className="size-5 text-blue-400" />
-                Target Analysis
-              </CardTitle>
+          {/* Target Analysis */}
+          <Card className="glass-panel border-white/10 flex flex-col min-h-96">
+            <CardHeader className="pb-4 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <Globe className="size-5 text-blue-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Target Analysis</CardTitle>
+                  <CardDescription>Original captured traffic details</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-hidden">
               {selectedEndpointDetails ? (
-                <ScrollArea className="h-full w-full p-4">
-                  <div className="space-y-5">
-                    <div>
-                      <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Endpoint URL</h4>
-                      <div className="flex items-center gap-3 bg-black/30 p-3 rounded-lg border border-white/5">
-                        <Badge variant="outline" className="bg-slate-800 text-slate-300 border-white/10 text-xs">
+                <ScrollArea className="h-full">
+                  <div className="p-5 space-y-5">
+                    {/* Endpoint URL */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Endpoint</p>
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-black/30 border border-white/5">
+                        <Badge variant="outline" className={`font-mono ${getMethodColor(selectedEndpointDetails.Method)}`}>
                           {selectedEndpointDetails.Method}
                         </Badge>
-                        <span className="font-mono text-sm text-slate-200 break-all">
+                        <code className="text-sm text-slate-200 break-all">
                           {selectedEndpointDetails.BaseURL}{selectedEndpointDetails.PathPattern}
-                        </span>
+                        </code>
                       </div>
                     </div>
 
-                    <div>
-                      <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Original Request Headers</h4>
-                      <div className="bg-black/30 p-4 rounded-lg border border-white/5 font-mono text-xs text-slate-300 space-y-1">
-                        {Object.entries(selectedEndpointDetails.SampleHeaders || {}).map(([key, vals]: any) => (
-                          <div key={key} className="break-all whitespace-pre-wrap">
-                            <span className="text-blue-400 font-semibold">{key}: </span>
-                            <span>{vals.join(', ')}</span>
+                    {/* Headers */}
+                    {selectedEndpointDetails.SampleHeaders && Object.keys(selectedEndpointDetails.SampleHeaders).length > 0 && (
+                      <Collapsible defaultOpen>
+                        <CollapsibleTrigger asChild>
+                          <button className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition-colors">
+                            <span>Request Headers</span>
+                            <ChevronDown className="size-4" />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <div className="p-4 rounded-lg bg-black/30 border border-white/5 font-mono text-xs space-y-1 max-h-48 overflow-auto">
+                            {Object.entries(selectedEndpointDetails.SampleHeaders || {}).map(([key, vals]: any) => (
+                              <div key={key} className="break-all">
+                                <span className="text-blue-400">{key}:</span>{" "}
+                                <span className="text-slate-300">{vals.join(", ")}</span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
 
+                    {/* Request Body */}
                     {selectedEndpointDetails.SampleReqBody && (
-                      <div>
-                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Original Request Body</h4>
-                        <div className="bg-black/30 p-4 rounded-lg border border-white/5 font-mono text-xs text-amber-400 overflow-x-hidden">
-                          <pre className="whitespace-pre-wrap break-all">
-                            {formatJSON(selectedEndpointDetails.SampleReqBody)}
-                          </pre>
-                        </div>
-                      </div>
+                      <Collapsible>
+                        <CollapsibleTrigger asChild>
+                          <button className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition-colors">
+                            <span>Request Body</span>
+                            <ChevronDown className="size-4" />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <div className="p-4 rounded-lg bg-black/30 border border-white/5 max-h-48 overflow-auto">
+                            <pre className="font-mono text-xs text-amber-400 whitespace-pre-wrap break-all">
+                              {formatJSON(selectedEndpointDetails.SampleReqBody)}
+                            </pre>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     )}
                   </div>
                 </ScrollArea>
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground text-sm p-6 text-center">
-                  Select an endpoint from the dropdown to view its original traffic capture.
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
+                  <Globe className="size-12 text-white/5 mb-4" />
+                  <p className="text-sm">Select an endpoint to view captured traffic</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Right — Scan Results */}
-          <Card className="glass-panel bg-card/50 border-white/10 h-125 flex flex-col relative overflow-hidden">
+          {/* Scanner Output */}
+          <Card className="glass-panel border-white/10 flex flex-col min-h-96 relative overflow-hidden">
+            {/* Progress indicator */}
             {isScanning && (
-              <div className="absolute top-0 left-0 w-full h-1 bg-black/20 overflow-hidden">
-                <div className="h-full bg-rose-500 w-1/3 animate-progress-indeterminate" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-black/20 overflow-hidden z-10">
+                <div className="h-full bg-linear-to-r from-rose-500 to-amber-500 w-1/3 animate-progress-indeterminate" />
               </div>
             )}
-            <CardHeader className="pb-1.5">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2.5">
-                <Terminal className="size-5 text-emerald-400" />
-                Scanner Output
-              </CardTitle>
+
+            <CardHeader className="pb-4 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className={`flex size-10 items-center justify-center rounded-xl border ${
+                  isScanning ? "bg-amber-500/10 border-amber-500/20" :
+                  scanResults && scanResults.length > 0 ? "bg-rose-500/10 border-rose-500/20" :
+                  "bg-emerald-500/10 border-emerald-500/20"
+                }`}>
+                  <Terminal className={`size-5 ${
+                    isScanning ? "text-amber-400" :
+                    scanResults && scanResults.length > 0 ? "text-rose-400" :
+                    "text-emerald-400"
+                  }`} />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Scanner Output</CardTitle>
+                  <CardDescription>
+                    {isScanning ? "Executing vulnerability tests..." : "Results will appear here"}
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-hidden">
-              <ScrollArea className="h-full w-full p-4">
-
-                {scanError && (
-                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-4 rounded-lg flex items-start gap-3">
-                    <AlertTriangle className="size-5 shrink-0 mt-0.5" />
-                    <p className="text-sm">{scanError}</p>
-                  </div>
-                )}
-
-                {!isScanning && !scanResults && !scanError && (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-sm py-20">
-                    <Braces className="size-10 text-white/10 mb-4" />
-                    <p>Ready to launch. Output will appear here.</p>
-                  </div>
-                )}
-
-                {isScanning && (
-                  <div className="flex flex-col items-center justify-center h-full py-20 text-slate-400 space-y-4">
-                    <Loader2 className="size-8 animate-spin text-rose-400" />
-                    <p className="text-sm font-mono animate-pulse">Forging payload and awaiting engine response...</p>
-                  </div>
-                )}
-
-                {!isScanning && scanResults && scanResults.length === 0 && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-6 rounded-lg flex flex-col items-center text-center gap-3">
-                    <CheckCircle2 className="size-10" />
-                    <div>
-                      <p className="font-semibold text-base">Target is Secure</p>
-                      <p className="text-sm opacity-80 mt-1">No vulnerabilities were detected for the executed test case.</p>
-                    </div>
-                    {inventoryId && (
-                      <Button variant="outline" size="sm" asChild className="glass-chip border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10">
-                        <Link href={`/dashboard/results?inventory_id=${inventoryId}`}>
-                          View persisted results
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {!isScanning && scanResults && scanResults.length > 0 && (
-                  <div className="space-y-4 pb-4">
-                    {scanResults.map((result, idx) => (
-                      <div key={idx} className="bg-black/40 border border-rose-500/30 rounded-lg p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={`${getSeverityColor(result.severity)} text-xs`}>
-                              {result.severity.toUpperCase()}
-                            </Badge>
-                            <span className="font-semibold text-sm text-slate-200">{result.test_type}</span>
-                          </div>
-                          <span className="text-xs font-mono text-muted-foreground">Status: {result.response_status}</span>
-                        </div>
-
-                        <p className="text-sm text-slate-300">{result.description}</p>
-
-                        <div>
-                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">CURL Proof of Concept</p>
-                          <div className="bg-black/60 p-3 rounded border border-white/5 font-mono text-xs text-blue-300 break-all whitespace-pre-wrap">
-                            {result.proof}
-                          </div>
-                        </div>
-
-                        {result.response_body && (
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Response Snippet</p>
-                            <div className="bg-black/60 p-3 rounded border border-white/5 font-mono text-xs text-emerald-400 max-h-48 overflow-y-auto whitespace-pre-wrap break-all">
-                              {result.response_body}
-                            </div>
-                          </div>
-                        )}
+              <ScrollArea className="h-full">
+                <div className="p-5">
+                  {/* Error State */}
+                  {scanError && (
+                    <div className="flex items-start gap-3 p-4 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                      <AlertTriangle className="size-5 text-rose-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-rose-400">Scan Failed</p>
+                        <p className="text-xs text-rose-300/80 mt-1">{scanError}</p>
                       </div>
-                    ))}
+                    </div>
+                  )}
 
-                    {inventoryId && (
-                      <div className="flex justify-end pt-1">
-                        <Button variant="outline" size="sm" asChild className="glass-chip border-white/10 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200">
+                  {/* Ready State */}
+                  {!isScanning && !scanResults && !scanError && (
+                    <div className="h-64 flex flex-col items-center justify-center text-muted-foreground text-center">
+                      <Braces className="size-16 text-white/5 mb-4" />
+                      <p className="text-sm font-medium text-slate-400">Ready to Launch</p>
+                      <p className="text-xs mt-1">Configure the scan and click Launch Scanner</p>
+                    </div>
+                  )}
+
+                  {/* Scanning State */}
+                  {isScanning && (
+                    <div className="h-64 flex flex-col items-center justify-center text-center">
+                      <div className="relative">
+                        <div className="absolute inset-0 rounded-full bg-rose-500/20 animate-ping" />
+                        <Loader2 className="size-12 text-rose-400 animate-spin relative" />
+                      </div>
+                      <p className="text-sm font-medium text-slate-300 mt-6">Executing Nuclei Engine</p>
+                      <p className="text-xs text-muted-foreground mt-1 font-mono">Forging payloads and awaiting response...</p>
+                    </div>
+                  )}
+
+                  {/* Success - No Vulnerabilities */}
+                  {!isScanning && scanResults && scanResults.length === 0 && (
+                    <div className="flex flex-col items-center justify-center text-center py-8">
+                      <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+                        <ShieldCheck className="size-8 text-emerald-400" />
+                      </div>
+                      <p className="text-lg font-semibold text-emerald-400">Target is Secure</p>
+                      <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                        No vulnerabilities were detected for the selected test case
+                      </p>
+                      {inventoryId && (
+                        <Button variant="outline" size="sm" asChild className="mt-4 glass-chip border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10">
                           <Link href={`/dashboard/results?inventory_id=${inventoryId}`}>
-                            View persisted results
+                            View All Results
+                            <ExternalLink className="ml-2 size-4" />
                           </Link>
                         </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  )}
 
+                  {/* Vulnerabilities Found */}
+                  {!isScanning && scanResults && scanResults.length > 0 && (
+                    <div className="space-y-4">
+                      {scanResults.map((result, idx) => {
+                        const resultKey = `result-${idx}`
+                        return (
+                          <Card
+                            key={idx}
+                            className={`border-l-4 bg-black/30 border-white/5 ${
+                              result.severity?.toLowerCase() === "critical" ? "border-l-rose-500" :
+                              result.severity?.toLowerCase() === "high" ? "border-l-orange-500" :
+                              result.severity?.toLowerCase() === "medium" ? "border-l-amber-500" :
+                              "border-l-emerald-500"
+                            }`}
+                          >
+                            <CardContent className="p-4 space-y-4">
+                              {/* Header */}
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className={`${getSeverityColor(result.severity)} text-xs`}>
+                                    {result.severity?.toUpperCase()}
+                                  </Badge>
+                                  <span className="font-semibold text-sm text-slate-200">{result.test_type.replace(/_/g, " ")}</span>
+                                </div>
+                                <Badge variant="outline" className="text-xs bg-black/30 text-muted-foreground border-white/10">
+                                  Status: {result.response_status}
+                                </Badge>
+                              </div>
+
+                              {/* Description */}
+                              <p className="text-sm text-slate-300">{result.description}</p>
+
+                              {/* Proof */}
+                              {result.proof && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">cURL Proof</p>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => copyToClipboard(result.proof, `proof-${resultKey}`)}
+                                      className="h-6 px-2 text-xs text-muted-foreground hover:text-slate-200"
+                                    >
+                                      {copiedId === `proof-${resultKey}` ? (
+                                        <><Check className="mr-1 size-3 text-emerald-400" /> Copied</>
+                                      ) : (
+                                        <><Copy className="mr-1 size-3" /> Copy</>
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <div className="p-3 rounded-lg bg-black/40 border border-white/5 overflow-auto max-h-32">
+                                    <pre className="font-mono text-xs text-blue-300 whitespace-pre-wrap break-all">
+                                      {result.proof}
+                                    </pre>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Response */}
+                              {result.response_body && (
+                                <Collapsible>
+                                  <CollapsibleTrigger asChild>
+                                    <button className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition-colors">
+                                      <ChevronDown className="size-3" />
+                                      Response Body
+                                    </button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="mt-2">
+                                    <div className="p-3 rounded-lg bg-black/40 border border-white/5 overflow-auto max-h-40">
+                                      <pre className="font-mono text-xs text-emerald-400 whitespace-pre-wrap break-all">
+                                        {result.response_body}
+                                      </pre>
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+
+                      {inventoryId && (
+                        <div className="flex justify-end pt-2">
+                          <Button variant="outline" size="sm" asChild className="glass-chip border-white/10 text-amber-300 hover:bg-amber-500/10">
+                            <Link href={`/dashboard/results?inventory_id=${inventoryId}`}>
+                              View All Persisted Results
+                              <ExternalLink className="ml-2 size-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
-
         </div>
       </div>
 

@@ -12,14 +12,6 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,16 +23,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  Activity,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import {
+  AlertTriangle,
+  Bug,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  Code2,
+  Copy,
+  Check,
   ExternalLink,
   FilterX,
+  Globe,
   RefreshCcw,
+  Shield,
   ShieldAlert,
-  Target,
+  ShieldCheck,
+  ShieldX,
+  Terminal,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -238,15 +244,41 @@ export default function ResultsPage() {
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
       case "critical":
-        return "bg-rose-500/10 text-rose-400 border-rose-500/20"
+        return "bg-rose-500/15 text-rose-400 border-rose-500/30"
       case "high":
-        return "bg-orange-500/10 text-orange-400 border-orange-500/20"
+        return "bg-orange-500/15 text-orange-400 border-orange-500/30"
       case "medium":
-        return "bg-amber-500/10 text-amber-400 border-amber-500/20"
+        return "bg-amber-500/15 text-amber-400 border-amber-500/30"
       case "low":
-        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+        return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
       default:
-        return "bg-slate-500/10 text-slate-400 border-slate-500/20"
+        return "bg-slate-500/15 text-slate-400 border-slate-500/30"
+    }
+  }
+
+  const getSeverityIcon = (severity: string) => {
+    switch (severity.toLowerCase()) {
+      case "critical":
+        return <ShieldX className="size-4" />
+      case "high":
+        return <ShieldAlert className="size-4" />
+      case "medium":
+        return <AlertTriangle className="size-4" />
+      case "low":
+        return <Shield className="size-4" />
+      default:
+        return <Shield className="size-4" />
+    }
+  }
+
+  const getMethodColor = (method: string) => {
+    switch (method?.toUpperCase()) {
+      case "GET": return "text-blue-400"
+      case "POST": return "text-emerald-400"
+      case "PUT": return "text-amber-400"
+      case "DELETE": return "text-rose-400"
+      case "PATCH": return "text-purple-400"
+      default: return "text-slate-400"
     }
   }
 
@@ -264,6 +296,13 @@ export default function ResultsPage() {
 
   const clearFilters = () => {
     setInventoryId("")
+  }
+
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
   }
 
   return (
@@ -292,94 +331,74 @@ export default function ResultsPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <div className="flex flex-1 flex-col gap-5 p-5 pt-0">
+        {/* Summary Stats */}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card className="glass-panel gap-3 py-4">
-            <CardContent className="flex items-center justify-between px-4">
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-xs">Results On Page</p>
-                <p className="text-xl font-semibold tracking-tight">{summary.total}</p>
-                <p className="text-xs text-slate-400">Current response window</p>
+          <Card className="glass-panel border-white/10 py-4">
+            <CardContent className="flex items-center gap-4 px-5">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
+                <Bug className="size-5 text-blue-400" />
               </div>
-              <div className="glass-chip flex size-10 items-center justify-center rounded-xl">
-                <Activity className="size-4 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-panel gap-3 py-4">
-            <CardContent className="flex items-center justify-between px-4">
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-xs">Vulnerable Findings</p>
-                <p className="text-xl font-semibold tracking-tight">{summary.vulnerable}</p>
-                <p className="text-xs text-rose-400">Persisted in scan-results</p>
-              </div>
-              <div className="glass-chip flex size-10 items-center justify-center rounded-xl">
-                <ShieldAlert className="size-4 text-rose-400" />
+              <div className="space-y-0.5">
+                <p className="text-2xl font-bold tracking-tight">{summary.total}</p>
+                <p className="text-xs text-muted-foreground">Total Findings</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-panel gap-3 py-4">
-            <CardContent className="flex items-center justify-between px-4">
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-xs">Critical</p>
-                <p className="text-xl font-semibold tracking-tight">{summary.critical}</p>
-                <p className="text-xs text-rose-400">Highest severity on page</p>
+          <Card className="glass-panel border-white/10 py-4">
+            <CardContent className="flex items-center gap-4 px-5">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20">
+                <ShieldX className="size-5 text-rose-400" />
               </div>
-              <div className="glass-chip flex size-10 items-center justify-center rounded-xl">
-                <Target className="size-4 text-amber-300" />
+              <div className="space-y-0.5">
+                <p className="text-2xl font-bold tracking-tight text-rose-400">{summary.vulnerable}</p>
+                <p className="text-xs text-muted-foreground">Vulnerable</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-panel gap-3 py-4">
-            <CardContent className="flex items-center justify-between px-4">
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-xs">High</p>
-                <p className="text-xl font-semibold tracking-tight">{summary.high}</p>
-                <p className="text-xs text-orange-400">Needs quick remediation</p>
+          <Card className="glass-panel border-white/10 py-4">
+            <CardContent className="flex items-center gap-4 px-5">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20">
+                <ShieldAlert className="size-5 text-rose-400" />
               </div>
-              <div className="glass-chip flex size-10 items-center justify-center rounded-xl">
-                <ShieldAlert className="size-4 text-orange-400" />
+              <div className="space-y-0.5">
+                <p className="text-2xl font-bold tracking-tight">{summary.critical}</p>
+                <p className="text-xs text-muted-foreground">Critical Severity</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-panel border-white/10 py-4">
+            <CardContent className="flex items-center gap-4 px-5">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20">
+                <AlertTriangle className="size-5 text-orange-400" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-2xl font-bold tracking-tight">{summary.high}</p>
+                <p className="text-xs text-muted-foreground">High Severity</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="glass-panel flex-1">
-          <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-4">
-            <div className="space-y-1">
-              <CardTitle className="text-2xl">Persisted Scan Results</CardTitle>
-              <CardDescription>
-                Findings saved by the backend from the scan-results collection.
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchResults}
-              disabled={loading}
-              className="glass-chip border-white/10"
-            >
-              <RefreshCcw className={`mr-2 size-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-          </CardHeader>
-
-          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+        {/* Filters Bar */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-1 flex-wrap items-center gap-3">
             <Select
               value={inventoryId || ALL_ENDPOINTS}
               onValueChange={(value) => setInventoryId(value === ALL_ENDPOINTS ? "" : value)}
             >
-              <SelectTrigger className="w-full sm:w-105 bg-black/20 border-white/10 text-slate-200">
+              <SelectTrigger className="w-full sm:w-80 bg-black/30 border-white/10 text-slate-200">
+                <Globe className="mr-2 size-4 text-muted-foreground" />
                 <SelectValue placeholder="Filter by endpoint" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-white/10 text-slate-200 max-h-75">
+              <SelectContent className="bg-slate-900 border-white/10 text-slate-200 max-h-80">
                 <SelectItem value={ALL_ENDPOINTS}>All endpoints</SelectItem>
                 {endpoints.map((endpoint) => (
                   <SelectItem key={endpoint.ID} value={endpoint.ID} className="font-mono text-xs">
-                    <span className="mr-2 font-bold text-slate-300">{endpoint.Method}</span>
+                    <span className={`mr-2 font-bold ${getMethodColor(endpoint.Method)}`}>{endpoint.Method}</span>
                     {endpoint.PathPattern}
                   </SelectItem>
                 ))}
@@ -389,6 +408,7 @@ export default function ResultsPage() {
             {inventoryId && (
               <Button
                 variant="ghost"
+                size="sm"
                 onClick={clearFilters}
                 className="text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
               >
@@ -398,175 +418,279 @@ export default function ResultsPage() {
             )}
 
             {selectedEndpoint && (
-              <div className="text-xs text-muted-foreground sm:ml-auto">
-                <span className="text-slate-200 font-mono">{selectedEndpoint.Method}</span>
-                <span className="mx-2">•</span>
-                <span>{selectedEndpoint.BaseURL}{selectedEndpoint.PathPattern}</span>
+              <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
+                <span className={`font-mono font-bold ${getMethodColor(selectedEndpoint.Method)}`}>{selectedEndpoint.Method}</span>
+                <span className="text-slate-400">{selectedEndpoint.BaseURL}{selectedEndpoint.PathPattern}</span>
               </div>
             )}
           </div>
 
-          <CardContent className="flex flex-1 flex-col gap-4 p-0">
-            {error ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center text-rose-400">
-                <p>{error}</p>
-                <Button variant="link" onClick={fetchResults} className="mt-2 text-blue-400">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchResults}
+            disabled={loading}
+            className="glass-chip border-white/10"
+          >
+            <RefreshCcw className={`mr-2 size-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+
+        {/* Results List */}
+        <div className="flex flex-col gap-4">
+          {error ? (
+            <Card className="glass-panel border-rose-500/20">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <ShieldX className="size-12 text-rose-400/50 mb-4" />
+                <p className="text-rose-400 mb-2">{error}</p>
+                <Button variant="outline" size="sm" onClick={fetchResults} className="mt-2">
                   Try Again
                 </Button>
-              </div>
-            ) : (
-              <div className="px-4 pb-2">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-white/5 hover:bg-transparent">
-                      <TableHead className="bg-white/5 rounded-l-lg">Severity</TableHead>
-                      <TableHead className="bg-white/5">Test</TableHead>
-                      <TableHead className="bg-white/5">Endpoint</TableHead>
-                      <TableHead className="bg-white/5">Status</TableHead>
-                      <TableHead className="bg-white/5">Recorded</TableHead>
-                      <TableHead className="bg-white/5 rounded-r-lg">Evidence</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      Array.from({ length: 5 }).map((_, index) => (
-                        <TableRow key={index} className="border-white/5">
-                          <TableCell><Skeleton className="h-6 w-20 bg-white/10" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-28 bg-white/10" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-60 bg-white/10" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-14 bg-white/10" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-24 bg-white/10" /></TableCell>
-                          <TableCell><Skeleton className="h-20 w-full bg-white/10" /></TableCell>
-                        </TableRow>
-                      ))
-                    ) : results.length === 0 ? (
-                      <TableRow className="border-white/5 hover:bg-transparent">
-                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                          No persisted scan results found for the selected filter.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      results.map((result, index) => {
-                        const endpoint = endpointMap.get(result.inventoryId)
-                        const detailsHref = result.inventoryId
-                          ? `/dashboard/logs/${result.inventoryId}`
-                          : ""
+              </CardContent>
+            </Card>
+          ) : loading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Card key={index} className="glass-panel border-white/10">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-4">
+                      <Skeleton className="size-10 rounded-lg bg-white/10" />
+                      <div className="flex-1 space-y-3">
+                        <Skeleton className="h-5 w-48 bg-white/10" />
+                        <Skeleton className="h-4 w-full bg-white/10" />
+                        <Skeleton className="h-24 w-full bg-white/10 rounded-lg" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : results.length === 0 ? (
+            <Card className="glass-panel border-white/10">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <ShieldCheck className="size-16 text-emerald-400/30 mb-4" />
+                <p className="text-xl font-semibold text-slate-200 mb-2">No Findings</p>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  No scan results found for the selected filter. Run a vulnerability scan to populate this view.
+                </p>
+                <Button variant="outline" size="sm" asChild className="mt-6 glass-chip border-white/10">
+                  <Link href="/dashboard/scan">
+                    Go to Scanner
+                    <ExternalLink className="ml-2 size-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            results.map((result, index) => {
+              const endpoint = endpointMap.get(result.inventoryId)
+              const detailsHref = result.inventoryId ? `/dashboard/logs/${result.inventoryId}` : ""
+              const resultKey = result.id || `${result.inventoryId}-${index}`
 
-                        return (
-                          <TableRow key={result.id || `${result.inventoryId}-${index}`} className="border-white/5 align-top">
-                            <TableCell>
-                              <Badge variant="outline" className={getSeverityColor(result.severity)}>
-                                {result.severity.toUpperCase()}
+              return (
+                <Card
+                  key={resultKey}
+                  className={`glass-panel border-l-4 transition-all hover:bg-white/2 ${
+                    result.severity.toLowerCase() === "critical" ? "border-l-rose-500" :
+                    result.severity.toLowerCase() === "high" ? "border-l-orange-500" :
+                    result.severity.toLowerCase() === "medium" ? "border-l-amber-500" :
+                    "border-l-emerald-500"
+                  }`}
+                >
+                  <CardContent className="p-0">
+                    {/* Header */}
+                    <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg border ${getSeverityColor(result.severity)}`}>
+                          {getSeverityIcon(result.severity)}
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-slate-100">{result.testType.replace(/_/g, " ")}</h3>
+                            <Badge variant="outline" className={`text-xs ${getSeverityColor(result.severity)}`}>
+                              {result.severity.toUpperCase()}
+                            </Badge>
+                            {result.vulnerable ? (
+                              <Badge variant="outline" className="text-xs bg-rose-500/10 text-rose-400 border-rose-500/30">
+                                <ShieldX className="mr-1 size-3" />
+                                Vulnerable
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <p className="font-medium text-slate-200">{result.testType}</p>
-                                <p className={`text-xs ${result.vulnerable ? "text-rose-400" : "text-emerald-400"}`}>
-                                  {result.vulnerable ? "Vulnerable" : "No vulnerability detected"}
-                                </p>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                                <ShieldCheck className="mr-1 size-3" />
+                                Secure
+                              </Badge>
+                            )}
+                          </div>
+                          {endpoint ? (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className={`font-mono font-bold ${getMethodColor(endpoint.Method)}`}>{endpoint.Method}</span>
+                              <span className="font-mono text-slate-300">{endpoint.PathPattern}</span>
+                              <span className="text-muted-foreground hidden sm:inline">• {endpoint.BaseURL}</span>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground font-mono">ID: {result.inventoryId || "Unknown"}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground sm:flex-col sm:items-end sm:gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="size-3" />
+                          {formatDate(result.createdAt)}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Code2 className="size-3" />
+                          Status: {result.responseStatus || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="px-5 pb-4">
+                      <p className="text-sm text-slate-300 leading-relaxed">{result.description}</p>
+                    </div>
+
+                    {/* Evidence Section */}
+                    {(result.proof || result.responseBody) && (
+                      <div className="border-t border-white/5">
+                        <Collapsible>
+                          <CollapsibleTrigger asChild>
+                            <button className="flex w-full items-center justify-between px-5 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-white/2 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <Terminal className="size-4" />
+                                View Evidence
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              {endpoint ? (
-                                <div className="space-y-1">
-                                  <p className="font-mono text-xs text-slate-200">
-                                    {endpoint.Method} {endpoint.PathPattern}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">{endpoint.BaseURL}</p>
-                                </div>
-                              ) : (
-                                <div className="space-y-1">
-                                  <p className="font-mono text-xs text-slate-200">Inventory ID: {result.inventoryId || "Unknown"}</p>
-                                  <p className="text-xs text-muted-foreground">Endpoint details unavailable</p>
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-slate-300">{result.responseStatus || "-"}</TableCell>
-                            <TableCell className="text-muted-foreground text-sm">{formatDate(result.createdAt)}</TableCell>
-                            <TableCell>
-                              <div className="space-y-3">
-                                <p className="text-sm text-slate-300 whitespace-pre-wrap wrap-break-word">
-                                  {result.description}
-                                </p>
-                                {result.proof && (
-                                  <ScrollArea className="h-20 rounded-md border border-white/10 bg-black/30 px-3 py-2">
-                                    <pre className="font-mono text-xs whitespace-pre-wrap break-all text-blue-300">
+                              <ChevronDown className="size-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                            </button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="space-y-4 px-5 pb-5">
+                              {result.proof && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">cURL Proof of Concept</p>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => copyToClipboard(result.proof, `proof-${resultKey}`)}
+                                      className="h-7 px-2 text-xs text-muted-foreground hover:text-slate-200"
+                                    >
+                                      {copiedId === `proof-${resultKey}` ? (
+                                        <><Check className="mr-1 size-3 text-emerald-400" /> Copied</>
+                                      ) : (
+                                        <><Copy className="mr-1 size-3" /> Copy</>
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <div className="relative overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                                    <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-blue-300 whitespace-pre-wrap break-all">
                                       {result.proof}
                                     </pre>
-                                  </ScrollArea>
-                                )}
-                                {result.responseBody && (
-                                  <ScrollArea className="h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2">
-                                    <pre className="font-mono text-xs whitespace-pre-wrap break-all text-emerald-300">
+                                  </div>
+                                </div>
+                              )}
+
+                              {result.responseBody && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Response Body</p>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => copyToClipboard(result.responseBody, `response-${resultKey}`)}
+                                      className="h-7 px-2 text-xs text-muted-foreground hover:text-slate-200"
+                                    >
+                                      {copiedId === `response-${resultKey}` ? (
+                                        <><Check className="mr-1 size-3 text-emerald-400" /> Copied</>
+                                      ) : (
+                                        <><Copy className="mr-1 size-3" /> Copy</>
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <div className="relative overflow-hidden rounded-lg border border-white/10 bg-black/40 max-h-48">
+                                    <pre className="overflow-auto p-4 font-mono text-xs leading-relaxed text-emerald-300 whitespace-pre-wrap break-all max-h-48">
                                       {result.responseBody}
                                     </pre>
-                                  </ScrollArea>
-                                )}
-                                {detailsHref && (
-                                  <Button variant="ghost" size="sm" asChild className="px-0 text-amber-400 hover:bg-transparent hover:text-amber-300">
-                                    <Link href={detailsHref}>
-                                      Endpoint details
-                                      <ExternalLink className="ml-1 size-4" />
-                                    </Link>
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </div>
                     )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
 
-            {!loading && !error && pagination && pagination.total > 0 && (
-              <div className="flex flex-col items-center justify-between gap-4 border-t border-white/5 p-4 sm:flex-row">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Select value={limit} onValueChange={setLimit}>
-                    <SelectTrigger className="h-8 w-20 bg-black/20 border-white/10 text-slate-200">
-                      <SelectValue placeholder="10" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span>
-                    Showing <span className="font-medium text-slate-200">{pagination.offset + 1}</span> to <span className="font-medium text-slate-200">{Math.min(pagination.offset + pagination.limit, pagination.total)}</span> of <span className="font-medium text-slate-200">{pagination.total}</span> results
-                  </span>
-                </div>
+                    {/* Footer Actions */}
+                    {detailsHref && (
+                      <div className="flex items-center justify-end gap-2 border-t border-white/5 px-5 py-3">
+                        <Button variant="ghost" size="sm" asChild className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10">
+                          <Link href={detailsHref}>
+                            View Endpoint Details
+                            <ExternalLink className="ml-2 size-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })
+          )}
+        </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="glass-chip border-white/10"
-                    disabled={pagination.page <= 1}
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  >
-                    <ChevronLeft className="mr-1 size-4" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="glass-chip border-white/10"
-                    disabled={pagination.page >= pagination.total_pages}
-                    onClick={() => setCurrentPage((page) => page + 1)}
-                  >
-                    Next
-                    <ChevronRight className="ml-1 size-4" />
-                  </Button>
-                </div>
+        {/* Pagination */}
+        {!loading && !error && pagination && pagination.total > 0 && (
+          <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-white/5 bg-black/20 p-4 sm:flex-row">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Select value={limit} onValueChange={setLimit}>
+                <SelectTrigger className="h-8 w-20 bg-black/30 border-white/10 text-slate-200">
+                  <SelectValue placeholder="10" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+              <span>
+                Showing <span className="font-medium text-slate-200">{pagination.offset + 1}</span> to{" "}
+                <span className="font-medium text-slate-200">{Math.min(pagination.offset + pagination.limit, pagination.total)}</span> of{" "}
+                <span className="font-medium text-slate-200">{pagination.total}</span> results
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="glass-chip border-white/10"
+                disabled={pagination.page <= 1}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              >
+                <ChevronLeft className="mr-1 size-4" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1 px-2">
+                <span className="text-sm text-muted-foreground">Page</span>
+                <span className="font-medium text-slate-200">{pagination.page}</span>
+                <span className="text-sm text-muted-foreground">of {pagination.total_pages}</span>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <Button
+                variant="outline"
+                size="sm"
+                className="glass-chip border-white/10"
+                disabled={pagination.page >= pagination.total_pages}
+                onClick={() => setCurrentPage((page) => page + 1)}
+              >
+                Next
+                <ChevronRight className="ml-1 size-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

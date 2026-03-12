@@ -89,7 +89,7 @@ const data = {
         },
         {
           title: "Results",
-          url: "#",
+          url: "/dashboard/results",
         },
       ],
     },

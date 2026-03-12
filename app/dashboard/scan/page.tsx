@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import {
   Breadcrumb,
@@ -468,6 +469,13 @@ export default function ScanPage() {
                       <p className="font-semibold text-base">Target is Secure</p>
                       <p className="text-sm opacity-80 mt-1">No vulnerabilities were detected for the executed test case.</p>
                     </div>
+                    {inventoryId && (
+                      <Button variant="outline" size="sm" asChild className="glass-chip border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10">
+                        <Link href={`/dashboard/results?inventory_id=${inventoryId}`}>
+                          View persisted results
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -504,6 +512,16 @@ export default function ScanPage() {
                         )}
                       </div>
                     ))}
+
+                    {inventoryId && (
+                      <div className="flex justify-end pt-1">
+                        <Button variant="outline" size="sm" asChild className="glass-chip border-white/10 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200">
+                          <Link href={`/dashboard/results?inventory_id=${inventoryId}`}>
+                            View persisted results
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 

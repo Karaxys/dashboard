@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from "react"
+import React, { Suspense, useEffect, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   Breadcrumb,
@@ -38,6 +38,14 @@ interface ApiInventoryDetail {
 }
 
 export default function LogDetailsPage() {
+  return (
+    <Suspense fallback={<div className="glass-page min-h-full" />}>
+      <LogDetailsPageContent />
+    </Suspense>
+  )
+}
+
+function LogDetailsPageContent() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -55,8 +63,8 @@ export default function LogDetailsPage() {
         if (!res.ok) throw new Error("Failed to fetch endpoint details")
         const data = await res.json()
         setLog(data)
-      } catch (err: any) {
-        setError(err.message || "An error occurred")
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "An error occurred")
       } finally {
         setLoading(false)
       }
@@ -84,7 +92,7 @@ export default function LogDetailsPage() {
     }
   }
 
-  const parseDate = (dateObj: any) => {
+  const parseDate = (dateObj: string | { $date: string } | null | undefined) => {
     if (!dateObj) return "Unknown"
     const dateStr = typeof dateObj === 'string' ? dateObj : dateObj.$date
     return new Intl.DateTimeFormat('en-US', {

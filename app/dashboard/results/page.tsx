@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from "react"
+import React, { Suspense, useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   Breadcrumb,
@@ -126,6 +126,14 @@ const normalizeScanResult = (result: RawScanResult): ScanResultRecord => ({
 })
 
 export default function ResultsPage() {
+  return (
+    <Suspense fallback={<div className="glass-page min-h-full" />}>
+      <ResultsPageContent />
+    </Suspense>
+  )
+}
+
+function ResultsPageContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()

@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from "react"
+import React, { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import {
@@ -49,12 +49,26 @@ interface ScanResult {
   timestamp: string
 }
 
+interface ScanJobResponse {
+  job_id: string
+  status: "queued" | "running" | "completed" | "failed"
+  inventory_id: string
+  test_type: string
+  error?: string
+  results_count?: number
+}
+
 interface ApiInventory {
   ID: string
   Method: string
   BaseURL: string
   PathPattern: string
   RiskLevel?: string
+}
+
+interface EndpointDetails extends ApiInventory {
+  SampleHeaders?: Record<string, string[]>
+  SampleReqBody?: string
 }
 
 const TEST_CASES = [
@@ -73,10 +87,18 @@ const SELECT_ENDPOINT_DEFAULT = "__SELECT_ENDPOINT__"
 const SELECT_TEST_CASE_DEFAULT = "__SELECT_TEST_CASE__"
 
 export default function ScanPage() {
+  return (
+    <Suspense fallback={<div className="glass-page min-h-full" />}>
+      <ScanPageContent />
+    </Suspense>
+  )
+}
+
+function ScanPageContent() {
   const searchParams = useSearchParams()
   // Data States
   const [endpoints, setEndpoints] = useState<ApiInventory[]>([])
-  const [selectedEndpointDetails, setSelectedEndpointDetails] = useState<any>(null)
+  const [selectedEndpointDetails, setSelectedEndpointDetails] = useState<EndpointDetails | null>(null)
   // Form States
   const [inventoryId, setInventoryId] = useState("")
   const [testType, setTestType] = useState("")
@@ -86,6 +108,8 @@ export default function ScanPage() {
   const [isScanning, setIsScanning] = useState(false)
   const [scanResults, setScanResults] = useState<ScanResult[] | null>(null)
   const [scanError, setScanError] = useState<string | null>(null)
+  const [scanJobId, setScanJobId] = useState<string | null>(null)
+  const [scanStatus, setScanStatus] = useState<ScanJobResponse["status"] | null>(null)
 
   useEffect(() => {
     const fetchEndpoints = async () => {
@@ -140,6 +164,8 @@ export default function ScanPage() {
     setIsScanning(true)
     setScanResults(null)
     setScanError(null)
+    setScanJobId(null)
+    setScanStatus(null)
 
     const scanPayload = {
       inventory_id: inventoryId,
@@ -160,13 +186,46 @@ export default function ScanPage() {
         throw new Error(errorText || "Failed to initialize scan.")
       }
 
-      const data = await res.json()
-      setScanResults(data || [])
-    } catch (err: any) {
-      setScanError(err.message || "An error occurred during the scan.")
+      const job: ScanJobResponse = await res.json()
+      setScanJobId(job.job_id)
+      setScanStatus(job.status)
+      const results = await pollScanJob(job.job_id)
+      setScanResults(results)
+    } catch (err: unknown) {
+      setScanError(err instanceof Error ? err.message : "An error occurred during the scan.")
     } finally {
       setIsScanning(false)
     }
+  }
+
+  const pollScanJob = async (jobId: string): Promise<ScanResult[]> => {
+    for (let attempt = 0; attempt < 90; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      const jobRes = await fetch(`http://localhost:8081/scan-jobs/${jobId}`)
+      if (!jobRes.ok) {
+        const errorText = await jobRes.text()
+        throw new Error(errorText || "Failed to fetch scan job status.")
+      }
+
+      const job: ScanJobResponse = await jobRes.json()
+      setScanStatus(job.status)
+
+      if (job.status === "failed") {
+        throw new Error(job.error || "Scanner worker failed the scan job.")
+      }
+      if (job.status === "completed") {
+        const resultsRes = await fetch(`http://localhost:8081/scan-results?job_id=${jobId}&limit=100`)
+        if (!resultsRes.ok) {
+          const errorText = await resultsRes.text()
+          throw new Error(errorText || "Failed to fetch scan results.")
+        }
+        const resultsPayload = await resultsRes.json()
+        return resultsPayload.data || []
+      }
+    }
+
+    throw new Error("Scan job timed out while waiting for scanner-worker.")
   }
 
   const formatJSON = (str: string) => {
@@ -394,7 +453,7 @@ export default function ScanPage() {
                     {isScanning ? (
                       <>
                         <Loader2 className="size-4 mr-2 animate-spin" />
-                        Executing Scan...
+                        {scanStatus === "queued" ? "Queued..." : "Executing Scan..."}
                       </>
                     ) : (
                       <>
@@ -432,7 +491,7 @@ export default function ScanPage() {
                       scanResults && scanResults.length === 0 ? "text-emerald-400" :
                       "text-slate-300"
                     }`}>
-                      {isScanning ? "Scanning..." :
+                      {isScanning ? (scanStatus === "queued" ? "Queued" : "Scanning...") :
                        scanResults && scanResults.length > 0 ? `${scanResults.length} Finding${scanResults.length > 1 ? "s" : ""}` :
                        scanResults && scanResults.length === 0 ? "Secure" :
                        "Ready"}
@@ -519,7 +578,7 @@ export default function ScanPage() {
                         </CollapsibleTrigger>
                         <CollapsibleContent className="mt-2">
                           <div className="p-4 rounded-lg bg-black/30 border border-white/5 font-mono text-xs space-y-1 max-h-48 overflow-auto">
-                            {Object.entries(selectedEndpointDetails.SampleHeaders || {}).map(([key, vals]: any) => (
+                            {Object.entries(selectedEndpointDetails.SampleHeaders || {}).map(([key, vals]) => (
                               <div key={key} className="break-all">
                                 <span className="text-blue-400">{key}:</span>{" "}
                                 <span className="text-slate-300">{vals.join(", ")}</span>
@@ -620,7 +679,9 @@ export default function ScanPage() {
                         <Loader2 className="size-12 text-rose-400 animate-spin relative" />
                       </div>
                       <p className="text-sm font-medium text-slate-300 mt-6">Executing Nuclei Engine</p>
-                      <p className="text-xs text-muted-foreground mt-1 font-mono">Forging payloads and awaiting response...</p>
+                      <p className="text-xs text-muted-foreground mt-1 font-mono">
+                        {scanJobId ? `Job ${scanJobId} is ${scanStatus || "queued"}` : "Creating scan job..."}
+                      </p>
                     </div>
                   )}
 

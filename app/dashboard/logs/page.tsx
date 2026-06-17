@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState, useMemo } from "react"
+import React, { Suspense, useEffect, useState, useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   Breadcrumb,
@@ -81,6 +81,14 @@ const parseRisk = (value: string | null) => {
 }
 
 export default function LogsPage() {
+  return (
+    <Suspense fallback={<div className="glass-page min-h-full" />}>
+      <LogsPageContent />
+    </Suspense>
+  )
+}
+
+function LogsPageContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -157,8 +165,8 @@ export default function LogsPage() {
         offset: responseData.offset,
       })
       
-    } catch (err: any) {
-      setError(err.message || "An error occurred while fetching logs.")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred while fetching logs.")
     } finally {
       setLoading(false)
     }
@@ -183,8 +191,8 @@ export default function LogsPage() {
         page += 1
       }
       setAllLogs(aggregated)
-    } catch (err: any) {
-      setError(err.message || "An error occurred while fetching logs.")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred while fetching logs.")
     } finally {
       setLoading(false)
     }

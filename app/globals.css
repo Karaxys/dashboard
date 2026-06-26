@@ -139,4 +139,174 @@
   .glass-chip {
     @apply border-white/10 bg-background/20 backdrop-blur-md;
   }
+
+  /* Subtle grid backdrop used on the landing page hero. */
+  .grid-backdrop {
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  }
+
+  /* Scroll-reveal: hidden until [data-revealed="true"] is set by useReveal. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal[data-revealed="true"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Amber gradient text used on hero accents. */
+  .text-gradient {
+    background: linear-gradient(120deg, var(--primary), color-mix(in oklch, var(--primary) 55%, white));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Soft radial glow blob behind hero/CTA. */
+  .glow-blob {
+    background: radial-gradient(circle at center, color-mix(in oklch, var(--primary) 28%, transparent), transparent 70%);
+  }
+
+  /* Card that lifts and glows on hover. */
+  .lift-card {
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .lift-card:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in oklch, var(--primary) 35%, transparent);
+    box-shadow: 0 18px 40px -24px color-mix(in oklch, var(--primary) 60%, transparent);
+  }
+
+  /* Continuous logo marquee. */
+  .marquee {
+    display: flex;
+    width: max-content;
+    animation: marquee 38s linear infinite;
+  }
+  .marquee-track:hover .marquee {
+    animation-play-state: paused;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Per-section radial glow + faint grid so backgrounds are never flat black. */
+  .section-glow {
+    position: relative;
+    isolation: isolate;
+  }
+  .section-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(60% 50% at 15% 0%, color-mix(in oklch, var(--primary) 9%, transparent), transparent 70%),
+      radial-gradient(50% 50% at 85% 100%, color-mix(in oklch, oklch(0.7 0.16 230) 9%, transparent), transparent 70%);
+  }
+  .section-lines::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000, transparent 90%);
+  }
+
+  /* Horizontal light beam that streaks across (GreyNoise-style). */
+  .beam {
+    position: absolute;
+    height: 1px;
+    width: 40%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklch, oklch(0.75 0.16 230) 90%, transparent),
+      transparent
+    );
+    filter: drop-shadow(0 0 6px oklch(0.75 0.16 230 / 0.6));
+    animation: beam-travel var(--beam-dur, 7s) linear infinite;
+    animation-delay: var(--beam-delay, 0s);
+  }
+  .beam-amber {
+    background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--primary) 90%, transparent), transparent);
+    filter: drop-shadow(0 0 6px color-mix(in oklch, var(--primary) 60%, transparent));
+  }
+
+  /* Expanding sonar ring for the core/radar diagrams. */
+  .sonar-ring {
+    animation: sonar 3.5s ease-out infinite;
+    animation-delay: var(--ring-delay, 0s);
+  }
+
+  /* Dot that flows horizontally across a connector (responsive via left %). */
+  .flow-x {
+    left: 0;
+    animation: flow-x var(--flow-dur, 2.6s) linear infinite;
+    animation-delay: var(--flow-delay, 0s);
+  }
+
+  .animate-spin-slow {
+    animation: spin 26s linear infinite;
+  }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes beam-travel {
+  0% { transform: translateX(-60%); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateX(320%); opacity: 0; }
+}
+
+@keyframes sonar {
+  0% { transform: scale(0.35); opacity: 0.55; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes flow-x {
+  0% { left: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .marquee,
+  .animate-float,
+  .beam,
+  .sonar-ring,
+  .flow-dot,
+  .animate-spin-slow {
+    animation: none;
+  }
+  .beam { opacity: 0.4; }
 }

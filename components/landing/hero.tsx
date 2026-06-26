@@ -15,9 +15,9 @@ export function Hero() {
         style={{
           background: [
             /* tight bright amber core rising from the very bottom edge */
-            "radial-gradient(ellipse 55% 70% at 50% 100%, oklch(0.70 0.22 78 / 0.55) 0%, transparent 60%)",
-            /* tall amber dome fading high up into the dark sky */
-            "radial-gradient(ellipse 95% 110% at 50% 100%, oklch(0.55 0.18 77 / 0.45) 0%, oklch(0.42 0.13 76 / 0.12) 45%, transparent 72%)",
+            "radial-gradient(ellipse 90% 65% at 50% 100%, oklch(0.70 0.22 78 / 0.55) 0%, transparent 60%)",
+            /* wide amber dome fading high up into the dark sky */
+            "radial-gradient(ellipse 150% 100% at 50% 100%, oklch(0.55 0.18 77 / 0.45) 0%, oklch(0.42 0.13 76 / 0.12) 45%, transparent 72%)",
           ].join(", "),
         }}
       />

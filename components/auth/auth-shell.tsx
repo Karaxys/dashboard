@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { ShieldCheck, Radar, Lock } from "lucide-react"
 import { Logo } from "@/components/landing/logo"
-import { Beams } from "@/components/landing/beams"
 
 const highlights = [
   { icon: Radar, text: "Discover every API from live eBPF traffic" },
@@ -24,12 +23,20 @@ export function AuthShell({
   return (
     <div className="grid min-h-screen bg-slate-950 text-slate-100 lg:grid-cols-2">
       {/* Brand panel */}
-      <div className="relative hidden overflow-hidden border-r border-slate-800 lg:flex lg:flex-col lg:justify-between lg:p-12">
-        <div className="grid-backdrop pointer-events-none absolute inset-0" aria-hidden />
-        <Beams count={5} />
-        <div className="glow-blob pointer-events-none absolute -left-20 top-1/3 h-96 w-96" aria-hidden />
-        <Link href="/" className="relative" aria-label="Karaxys home">
-          <Logo />
+      <div className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-center lg:p-12">
+        {/* Amber horizon glow — wide, flat arc */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: [
+              "radial-gradient(ellipse 150% 45% at 50% 102%, oklch(0.70 0.22 78 / 0.42) 0%, transparent 60%)",
+              "radial-gradient(ellipse 180% 60% at 50% 102%, oklch(0.55 0.18 77 / 0.32) 0%, oklch(0.42 0.13 76 / 0.10) 45%, transparent 72%)",
+            ].join(", "),
+          }}
+        />
+        <Link href="/" className="absolute left-12 top-[26%] inline-block" aria-label="Karaxys home">
+          <Logo size="lg" />
         </Link>
         <div className="relative">
           <h2 className="max-w-md text-3xl font-bold tracking-tight">
@@ -46,7 +53,9 @@ export function AuthShell({
             ))}
           </ul>
         </div>
-        <p className="relative text-sm text-slate-500">© {new Date().getFullYear()} Karaxys</p>
+        <p className="absolute bottom-12 left-12 text-sm text-slate-500">
+          © {new Date().getFullYear()} Karaxys
+        </p>
       </div>
 
       {/* Form panel */}

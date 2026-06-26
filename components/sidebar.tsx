@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth"
 import {
   BookOpen,
   Settings2,
@@ -19,7 +21,6 @@ import {
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
 } from "@/components/ui/avatar"
 import {
   Collapsible,
@@ -52,11 +53,6 @@ import {
 } from "@/components/ui/sidebar"
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "",
-  },
   app: {
     name: "Karaxys",
   },
@@ -141,7 +137,26 @@ const data = {
   ],
 }
 
+function initialsFromName(name: string, email: string): string {
+  const base = name.trim() || email.trim()
+  if (!base) return "KX"
+  const parts = base.split(/\s+/).filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return base.slice(0, 2).toUpperCase()
+}
+
 export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter()
+  const { user, account, logout } = useAuth()
+  const displayName = user?.name?.trim() || user?.email || "Account"
+  const displayEmail = account?.name || user?.email || ""
+  const initials = initialsFromName(user?.name || "", user?.email || "")
+
+  const handleLogout = async () => {
+    await logout()
+    router.replace("/login")
+  }
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -212,14 +227,11 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    {data.user.avatar && (
-                      <AvatarImage src={data.user.avatar} alt={data.user.name} />
-                    )}
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                    <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{data.user.name}</span>
-                    <span className="truncate text-xs">{data.user.email}</span>
+                    <span className="truncate font-semibold">{displayName}</span>
+                    <span className="truncate text-xs">{displayEmail}</span>
                   </div>
                   <ChevronsUpDown className="ml-auto size-4" />
                 </SidebarMenuButton>
@@ -233,14 +245,11 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
-                      {data.user.avatar && (
-                        <AvatarImage src={data.user.avatar} alt={data.user.name} />
-                      )}
-                      <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                      <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{data.user.name}</span>
-                      <span className="truncate text-xs">{data.user.email}</span>
+                      <span className="truncate font-semibold">{displayName}</span>
+                      <span className="truncate text-xs">{displayEmail}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
@@ -267,7 +276,7 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut />
                   Log out
                 </DropdownMenuItem>

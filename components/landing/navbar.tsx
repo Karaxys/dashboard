@@ -39,7 +39,7 @@ function DocsDropdown() {
           open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-1 opacity-0"
         )}
       >
-        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-2xl shadow-black/60">
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-2xl shadow-black/60">
           <div className="flex">
             {/* Left panel */}
             <div className="w-52 shrink-0 bg-slate-800/50 p-6">
@@ -125,7 +125,7 @@ export function LandingNavbar() {
             href="https://github.com/karaxys"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 transition-colors hover:border-slate-600 hover:bg-slate-800"
+            className="flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-300 transition-colors hover:border-slate-600 hover:bg-slate-800"
           >
             <Star className="size-3.5" />
             Stars

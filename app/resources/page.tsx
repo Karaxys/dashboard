@@ -43,7 +43,7 @@ export default function ResourcesPage() {
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             {posts.map((post, i) => (
               <Reveal key={post.title} delay={(i % 3) * 80}>
-                <div className="group flex h-full flex-col rounded-xl border border-slate-800 bg-slate-900/60 p-6 transition-colors hover:border-slate-700 hover:bg-slate-900">
+                <div className="group flex h-full flex-col rounded-xl border border-slate-800 bg-slate-950/60 p-6 transition-colors hover:border-slate-700 hover:bg-slate-950">
                   <div className="flex items-center gap-3">
                     <Badge
                       variant="outline"
@@ -84,7 +84,7 @@ export default function ResourcesPage() {
 
           <div className="space-y-4">
             <Reveal>
-              <div id="careers" className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+              <div id="careers" className="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
                 <h3 className="font-semibold text-slate-100">Careers</h3>
                 <p className="mt-2 text-sm text-slate-400">
                   We&apos;re a small team solving hard problems in kernel observability and API
@@ -93,7 +93,7 @@ export default function ResourcesPage() {
               </div>
             </Reveal>
             <Reveal delay={80}>
-              <div id="contact" className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+              <div id="contact" className="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
                 <h3 className="font-semibold text-slate-100">Contact</h3>
                 <p className="mt-2 text-sm text-slate-400">
                   Questions about the platform or a deployment? Get in touch and the team will get

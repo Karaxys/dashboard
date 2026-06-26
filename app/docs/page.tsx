@@ -128,7 +128,7 @@ export default function DocsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               {sections.map((section, i) => (
                 <Reveal key={section.title} delay={(i % 2) * 80}>
-                  <div className="group rounded-xl border border-slate-800 bg-slate-900/60 p-6 transition-colors hover:border-slate-700 hover:bg-slate-900">
+                  <div className="group rounded-xl border border-slate-800 bg-slate-950/60 p-6 transition-colors hover:border-slate-700 hover:bg-slate-950">
                     <span className="flex size-10 items-center justify-center rounded-lg border border-slate-700 bg-slate-800">
                       <section.icon className="size-5 text-amber-400" />
                     </span>
@@ -154,7 +154,7 @@ export default function DocsPage() {
               <div className="mt-6 space-y-3">
                 {changelog.map((entry, i) => (
                   <Reveal key={entry.version} delay={i * 70}>
-                    <div className="flex gap-4 rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+                    <div className="flex gap-4 rounded-xl border border-slate-800 bg-slate-950/40 p-5">
                       <Badge
                         variant="outline"
                         className="h-fit shrink-0 border-amber-500/30 text-amber-400"

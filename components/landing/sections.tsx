@@ -124,7 +124,7 @@ export function FeatureInventory() {
   )
 }
 
-// ─── Feature: Security (Metlo-style two-col) ─────────────────────────────────
+// ─── Feature: Security ─────────────────────────────────
 
 const securityPoints = [
   {
@@ -175,7 +175,7 @@ export function Security() {
           <div className="space-y-4">
             {securityPoints.map((point, i) => (
               <Reveal key={point.title} delay={i * 80}>
-                <div className="flex gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+                <div className="flex gap-4 rounded-xl border border-slate-800 bg-slate-950/60 p-5">
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-slate-800">
                     <point.icon className="size-5 text-amber-400" />
                   </span>

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist_Mono, Outfit } from "next/font/google";
-// @ts-expect-error Next.js supports global CSS side-effect imports in app/layout.
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/lib/auth"
 
 const outfit = Outfit({
   variable: "--font-geist-sans",
@@ -42,7 +42,7 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          {children}
+          <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
       </body>
     </html>

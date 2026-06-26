@@ -74,7 +74,7 @@ export function IntegrationsRadar() {
             className="absolute left-1/2 top-1/2"
             style={{ transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` }}
           >
-            <div className="flex items-center gap-2 rounded-full border border-amber-500/20 bg-slate-900/90 px-4 py-2 backdrop-blur-md">
+            <div className="flex items-center gap-2 rounded-full border border-amber-500/20 bg-slate-950/90 px-4 py-2 backdrop-blur-md">
               <item.icon className="size-3.5 text-amber-400" />
               <span className="text-xs font-medium text-slate-200">{item.label}</span>
             </div>

@@ -193,7 +193,7 @@
     animation-play-state: paused;
   }
 
-  /* Vertical auto-scrolling column (Metlo-style cards). */
+  /* Vertical auto-scrolling column. */
   .marquee-y {
     display: flex;
     flex-direction: column;

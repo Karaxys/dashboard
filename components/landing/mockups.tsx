@@ -24,7 +24,7 @@ const findings = [
 
 function FindingCard({ f }: { f: (typeof findings)[number] }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+    <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-4">
       <div className="flex items-center justify-between">
         <span className={`rounded px-2 py-0.5 text-xs font-semibold ${severityBadge[f.severity]}`}>
           {f.severity}
@@ -73,7 +73,7 @@ const inventoryRows = [
 
 export function InventoryMockup() {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-2xl shadow-black/50">
+    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-2xl shadow-black/50">
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
         <span className="text-sm font-semibold text-slate-100">API Inventory</span>
         <span className="text-xs text-slate-500">1,284 endpoints</span>

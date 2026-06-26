@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import {
   BookOpen,
-  GalleryVerticalEnd,
   Settings2,
   SquareTerminal,
   ChevronsUpDown,
@@ -55,11 +55,10 @@ const data = {
   user: {
     name: "shadcn",
     email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    avatar: "",
   },
   app: {
     name: "Karaxys",
-    logo: GalleryVerticalEnd,
   },
   navMain: [
     {
@@ -149,8 +148,14 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <data.app.logo className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
+                <Image
+                  src="/karaxys_logo.png"
+                  alt="Karaxys"
+                  width={32}
+                  height={32}
+                  className="size-8 rounded-lg object-contain"
+                />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{data.app.name}</span>
@@ -207,7 +212,9 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={data.user.avatar} alt={data.user.name} />
+                    {data.user.avatar && (
+                      <AvatarImage src={data.user.avatar} alt={data.user.name} />
+                    )}
                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -226,7 +233,9 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={data.user.avatar} alt={data.user.name} />
+                      {data.user.avatar && (
+                        <AvatarImage src={data.user.avatar} alt={data.user.name} />
+                      )}
                       <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">

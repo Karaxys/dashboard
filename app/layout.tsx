@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   title: "Karaxys — Real-time API Security Platform",
   description:
     "Karaxys discovers, classifies, and tests every API across your infrastructure using eBPF-powered traffic capture and continuous security testing.",
+  icons: {
+    icon: [
+      { url: "/karaxys_blk.svg", type: "image/svg+xml" },
+      { url: "/karaxys_logo.png", type: "image/png" },
+    ],
+    apple: "/karaxys_logo.png",
+  },
 };
 
 export default function RootLayout({

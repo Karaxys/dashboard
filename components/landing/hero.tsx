@@ -1,85 +1,93 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Reveal } from "./reveal"
-import { TrafficCanvas } from "./traffic-canvas"
-import { Beams } from "./beams"
-
-const liveRows = [
-  { method: "GET", path: "/api/v2/users/{id}", risk: "CRITICAL", tone: "text-rose-400", tag: "BOLA" },
-  { method: "POST", path: "/api/v2/auth/login", risk: "MEDIUM", tone: "text-amber-300", tag: "Auth" },
-  { method: "GET", path: "/api/v2/orders/export", risk: "HIGH", tone: "text-orange-400", tag: "PII" },
-  { method: "PUT", path: "/internal/admin/flags", risk: "HIGH", tone: "text-orange-400", tag: "Shadow" },
-  { method: "GET", path: "/api/v2/health", risk: "LOW", tone: "text-emerald-400", tag: "Public" },
-]
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-32 pb-24 sm:pt-40">
-      <div className="grid-backdrop pointer-events-none absolute inset-0" aria-hidden />
-      <TrafficCanvas className="opacity-90" />
-      <Beams count={7} />
-      <div className="glow-blob pointer-events-none absolute left-1/2 top-[-10%] h-[460px] w-[860px] -translate-x-1/2" aria-hidden />
+    <section className="relative overflow-hidden pt-28 pb-32 sm:pt-36 sm:pb-40">
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-        <Reveal>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-background/50 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-            <span className="size-1.5 animate-pulse rounded-full bg-primary" />
-            eBPF-powered API discovery & continuous security testing
-          </span>
-          <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-            See every API.<br />
-            <span className="text-gradient">Secure</span> the ones that matter.
-          </h1>
-          <p className="mt-6 max-w-xl text-pretty text-lg text-muted-foreground">
-            Karaxys captures live traffic at the kernel with eBPF, builds a complete API inventory,
-            classifies sensitive data, and continuously tests for OWASP API risks — with no code
-            changes, no SDKs, and no agents in your application.
-          </p>
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg" className="font-semibold">
-              <Link href="/signup">
-                Start free <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/dashboard">View live dashboard</Link>
-            </Button>
-          </div>
-          <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="size-4 text-primary" />
-            Redaction-by-default · RBAC · SSRF-safe scanning
-          </p>
-        </Reveal>
+      {/* Rising-sun horizon — bright amber dome whose center sits just below the fold, so only the rising curve shows */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: [
+            /* tight bright amber core rising from the very bottom edge */
+            "radial-gradient(ellipse 55% 70% at 50% 100%, oklch(0.70 0.22 78 / 0.55) 0%, transparent 60%)",
+            /* tall amber dome fading high up into the dark sky */
+            "radial-gradient(ellipse 95% 110% at 50% 100%, oklch(0.55 0.18 77 / 0.45) 0%, oklch(0.42 0.13 76 / 0.12) 45%, transparent 72%)",
+          ].join(", "),
+        }}
+      />
 
-        <Reveal delay={140}>
-          <div className="lift-card glass-panel relative rounded-2xl border p-1.5 animate-float">
-            <div className="flex items-center gap-1.5 px-3 py-2">
-              <span className="size-2.5 rounded-full bg-rose-400/70" />
-              <span className="size-2.5 rounded-full bg-amber-300/70" />
-              <span className="size-2.5 rounded-full bg-emerald-400/70" />
-              <span className="ml-3 text-xs text-muted-foreground">karaxys · live capture</span>
-              <span className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400">
-                <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> streaming
-              </span>
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-14 lg:grid-cols-[5fr_7fr] lg:gap-16">
+
+          {/* Left: text */}
+          <Reveal>
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400">
+              <span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
+              eBPF-powered · No code changes required
             </div>
-            <div className="rounded-xl bg-black/30 p-3 font-mono text-xs">
-              <div className="grid grid-cols-[auto_1fr_auto] gap-x-3 gap-y-2.5">
-                {liveRows.map((row) => (
-                  <div key={row.path} className="contents">
-                    <span className="text-sky-400">{row.method}</span>
-                    <span className="truncate text-slate-300">{row.path}</span>
-                    <span className={row.tone}>{row.risk}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-muted-foreground">
-                <span>1,284 endpoints discovered</span>
-                <span className="text-primary">43 open risks</span>
-              </div>
+            <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              See every API.<br />
+              <span className="text-amber-400">Secure</span> the ones<br />
+              that matter.
+            </h1>
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-slate-400">
+              Karaxys captures live traffic at the kernel with eBPF, builds a complete
+              API inventory, and{" "}
+              <span className="text-slate-200">continuously tests for OWASP API risks</span>
+              {" "}— with no SDKs, no agents, and no code changes.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button
+                asChild
+                size="lg"
+                className="bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400"
+              >
+                <Link href="/signup">
+                  Try Karaxys for Free <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white"
+              >
+                <Link href="/dashboard">View live dashboard</Link>
+              </Button>
             </div>
-          </div>
-        </Reveal>
+            <p className="mt-6 flex items-center gap-2 text-xs text-slate-500">
+              <ShieldCheck className="size-4 text-amber-500/70" />
+              Redaction-by-default · RBAC · SSRF-safe scanning
+            </p>
+          </Reveal>
+
+          {/* Right: product screenshot — tilted in perspective */}
+          <Reveal delay={100}>
+            <div
+              className="overflow-hidden rounded-2xl border border-slate-700/50 shadow-2xl shadow-amber-950/40 ring-1 ring-white/5"
+              style={{
+                transform: "perspective(1400px) rotateX(8deg) rotateY(-4deg) rotateZ(1.5deg)",
+                transformOrigin: "center top",
+              }}
+            >
+              <Image
+                src="/hero.png"
+                alt="Karaxys dashboard — live API capture and risk view"
+                width={1280}
+                height={800}
+                className="w-full h-auto"
+                priority
+              />
+            </div>
+          </Reveal>
+
+        </div>
       </div>
     </section>
   )

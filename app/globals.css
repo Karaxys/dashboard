@@ -193,34 +193,18 @@
     animation-play-state: paused;
   }
 
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
+  /* Vertical auto-scrolling column (Metlo-style cards). */
+  .marquee-y {
+    display: flex;
+    flex-direction: column;
+    animation: marquee-y 45s linear infinite;
+  }
+  .marquee-y-track:hover .marquee-y {
+    animation-play-state: paused;
   }
 
-  /* Per-section radial glow + faint grid so backgrounds are never flat black. */
-  .section-glow {
-    position: relative;
-    isolation: isolate;
-  }
-  .section-glow::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(60% 50% at 15% 0%, color-mix(in oklch, var(--primary) 9%, transparent), transparent 70%),
-      radial-gradient(50% 50% at 85% 100%, color-mix(in oklch, oklch(0.7 0.16 230) 9%, transparent), transparent 70%);
-  }
-  .section-lines::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background-image:
-      linear-gradient(to right, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px);
-    background-size: 64px 64px;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000, transparent 90%);
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
 
   /* Horizontal light beam that streaks across (GreyNoise-style). */
@@ -266,6 +250,11 @@
   to { transform: translateX(-50%); }
 }
 
+@keyframes marquee-y {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
@@ -300,13 +289,4 @@
     transform: none;
     transition: none;
   }
-  .marquee,
-  .animate-float,
-  .beam,
-  .sonar-ring,
-  .flow-dot,
-  .animate-spin-slow {
-    animation: none;
-  }
-  .beam { opacity: 0.4; }
 }

@@ -49,6 +49,7 @@ import {
   Terminal,
 } from "lucide-react"
 import Link from "next/link"
+import { apiFetch } from "@/lib/api"
 
 interface InventoryOption {
   ID: string
@@ -171,9 +172,7 @@ function ResultsPageContent() {
   useEffect(() => {
     const fetchEndpoints = async () => {
       try {
-        const res = await fetch("http://localhost:8081/inventory?limit=500")
-        if (!res.ok) return
-        const data = await res.json()
+        const data = await apiFetch<{ data: InventoryOption[] }>("/inventory?limit=500")
         setEndpoints(data.data || [])
       } catch (fetchError) {
         console.error("Failed to fetch endpoints for results page", fetchError)
@@ -197,12 +196,7 @@ function ResultsPageContent() {
         queryParams.set("inventory_id", inventoryId)
       }
 
-      const res = await fetch(`http://localhost:8081/scan-results?${queryParams.toString()}`)
-      if (!res.ok) {
-        throw new Error("Failed to fetch scan results")
-      }
-
-      const responseData = await res.json()
+      const responseData = await apiFetch<{ data: RawScanResult[]; total: number; page: number; limit: number; total_pages: number; offset: number }>(`/scan-results?${queryParams.toString()}`)
       const normalizedResults = Array.isArray(responseData.data)
         ? responseData.data.map((item: RawScanResult) => normalizeScanResult(item))
         : []

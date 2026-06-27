@@ -16,10 +16,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { 
-  ArrowLeft, Activity, ShieldAlert, Database, Globe, 
+import {
+  ArrowLeft, Activity, ShieldAlert, Database, Globe,
   Clock, Braces, KeyRound, Lock, Fingerprint, CreditCard, FileText, User
 } from "lucide-react"
+import { apiFetch } from "@/lib/api"
 
 interface ApiInventoryDetail {
   ID?: string
@@ -59,9 +60,7 @@ function LogDetailsPageContent() {
   useEffect(() => {
     const fetchLogDetails = async () => {
       try {
-        const res = await fetch(`http://localhost:8081/inventory/${id}`)
-        if (!res.ok) throw new Error("Failed to fetch endpoint details")
-        const data = await res.json()
+        const data = await apiFetch<ApiInventoryDetail>(`/inventory/${id}`)
         setLog(data)
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "An error occurred")

@@ -36,6 +36,7 @@ import {
   ChevronDown, Copy, Check, ShieldCheck, ShieldX,
   FileCode2, ExternalLink, Crosshair, FlaskConical, Radio, Code2
 } from "lucide-react"
+import { apiFetch } from "@/lib/api"
 
 // Types
 interface ScanResult {
@@ -114,11 +115,8 @@ function ScanPageContent() {
   useEffect(() => {
     const fetchEndpoints = async () => {
       try {
-        const res = await fetch("http://localhost:8081/inventory?limit=500")
-        if (res.ok) {
-          const data = await res.json()
-          setEndpoints(data.data || [])
-        }
+        const data = await apiFetch<{ data: ApiInventory[] }>("/inventory?limit=500")
+        setEndpoints(data.data || [])
       } catch (err) {
         console.error("Failed to fetch endpoints for dropdown", err)
       }
@@ -136,11 +134,8 @@ function ScanPageContent() {
     }
     const fetchDetails = async () => {
       try {
-        const res = await fetch(`http://localhost:8081/inventory/${inventoryId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setSelectedEndpointDetails(data)
-        }
+        const data = await apiFetch<EndpointDetails>(`/inventory/${inventoryId}`)
+        setSelectedEndpointDetails(data)
       } catch (err) {
         console.error("Failed to fetch endpoint details", err)
       }
@@ -175,18 +170,10 @@ function ScanPageContent() {
     }
 
     try {
-      const res = await fetch("http://localhost:8081/scan", {
+      const job = await apiFetch<ScanJobResponse>("/scan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(scanPayload),
       })
-
-      if (!res.ok) {
-        const errorText = await res.text()
-        throw new Error(errorText || "Failed to initialize scan.")
-      }
-
-      const job: ScanJobResponse = await res.json()
       setScanJobId(job.job_id)
       setScanStatus(job.status)
       const results = await pollScanJob(job.job_id)
@@ -202,25 +189,14 @@ function ScanPageContent() {
     for (let attempt = 0; attempt < 90; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 2000))
 
-      const jobRes = await fetch(`http://localhost:8081/scan-jobs/${jobId}`)
-      if (!jobRes.ok) {
-        const errorText = await jobRes.text()
-        throw new Error(errorText || "Failed to fetch scan job status.")
-      }
-
-      const job: ScanJobResponse = await jobRes.json()
+      const job = await apiFetch<ScanJobResponse>(`/scan-jobs/${jobId}`)
       setScanStatus(job.status)
 
       if (job.status === "failed") {
         throw new Error(job.error || "Scanner worker failed the scan job.")
       }
       if (job.status === "completed") {
-        const resultsRes = await fetch(`http://localhost:8081/scan-results?job_id=${jobId}&limit=100`)
-        if (!resultsRes.ok) {
-          const errorText = await resultsRes.text()
-          throw new Error(errorText || "Failed to fetch scan results.")
-        }
-        const resultsPayload = await resultsRes.json()
+        const resultsPayload = await apiFetch<{ data: ScanResult[] }>(`/scan-results?job_id=${jobId}&limit=100`)
         return resultsPayload.data || []
       }
     }

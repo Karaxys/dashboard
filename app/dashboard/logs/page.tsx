@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select"
 import { RefreshCcw, Search, Server, ChevronLeft, ChevronRight, Clock, FilterX } from "lucide-react"
 import Link from "next/link"
+import { apiFetch } from "@/lib/api"
 
 interface ApiInventory {
   ID: string
@@ -49,6 +50,15 @@ interface ApiInventory {
   SampleRespBody: string
   CreatedAt: string
   UpdatedAt: string
+}
+
+interface InventoryResponse {
+  data: ApiInventory[]
+  total: number
+  page: number
+  limit: number
+  total_pages: number
+  offset: number
 }
 
 interface PaginationInfo {
@@ -150,11 +160,7 @@ function LogsPageContent() {
         limit: limit,
       })
 
-      const res = await fetch(`http://localhost:8081/inventory?${queryParams.toString()}`)     
-      if (!res.ok) {
-        throw new Error("Failed to fetch inventory logs")
-      }
-      const responseData = await res.json()
+      const responseData = await apiFetch<InventoryResponse>(`/inventory?${queryParams.toString()}`)
       
       setLogs(responseData.data || [])
       setPagination({
@@ -181,11 +187,7 @@ function LogsPageContent() {
       let totalPages = 1
       const aggregated: ApiInventory[] = []
       while (page <= totalPages) {
-        const res = await fetch(`http://localhost:8081/inventory?page=${page}&limit=${pageSize}`)
-        if (!res.ok) {
-          throw new Error("Failed to fetch inventory logs")
-        }
-        const responseData = await res.json()
+        const responseData = await apiFetch<InventoryResponse>(`/inventory?page=${page}&limit=${pageSize}`)
         aggregated.push(...(responseData.data || []))
         totalPages = responseData.total_pages || 1
         page += 1

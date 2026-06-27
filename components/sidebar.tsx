@@ -16,6 +16,9 @@ import {
   Bell,
   ChevronRight,
   ShieldQuestion,
+  Bug,
+  Crosshair,
+  Radio,
 } from "lucide-react"
 
 import {
@@ -64,12 +67,8 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Logs",
+          title: "Inventory",
           url: "/dashboard/logs",
-        },
-        {
-          title: "Starred",
-          url: "#",
         },
       ],
     },
@@ -86,28 +85,20 @@ const data = {
           title: "Results",
           url: "/dashboard/results",
         },
+        {
+          title: "Findings",
+          url: "/dashboard/findings",
+        },
       ],
     },
     {
-      title: "Documentation",
+      title: "Agents",
       url: "#",
-      icon: BookOpen,
+      icon: Radio,
       items: [
         {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
+          title: "Data Sources",
+          url: "/dashboard/agents",
         },
       ],
     },
@@ -117,20 +108,8 @@ const data = {
       icon: Settings2,
       items: [
         {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
+          title: "Security & Retention",
+          url: "/dashboard/settings",
         },
       ],
     },

@@ -6,6 +6,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Pie,
   PieChart,
   XAxis,
@@ -21,124 +22,152 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const riskTrendData = [
-  { day: "Mon", critical: 4, high: 10, medium: 18 },
-  { day: "Tue", critical: 3, high: 9, medium: 16 },
-  { day: "Wed", critical: 5, high: 12, medium: 20 },
-  { day: "Thu", critical: 4, high: 11, medium: 17 },
-  { day: "Fri", critical: 2, high: 8, medium: 14 },
-  { day: "Sat", critical: 2, high: 7, medium: 12 },
-  { day: "Sun", critical: 1, high: 6, medium: 10 },
-]
+// ─── Exported Types ────────────────────────────────────────────────────────────
+
+export interface DailyIssueCounts {
+  day: string
+  critical: number
+  high: number
+  medium: number
+  low: number
+}
+
+export interface TopEndpoint {
+  inventory_id: string
+  path: string
+  method: string
+  issue_count: number
+}
+
+export interface SensitiveDataBreakdown {
+  pii: number
+  financial: number
+  secrets: number
+  other: number
+}
+
+// ─── Risk Trend Chart — 7-day stacked area ───────────────────────────────────
 
 const riskTrendConfig = {
   critical: { label: "Critical", color: "var(--chart-5)" },
-  high: { label: "High", color: "var(--chart-4)" },
-  medium: { label: "Medium", color: "var(--chart-1)" },
+  high:     { label: "High",     color: "var(--chart-4)" },
+  medium:   { label: "Medium",   color: "var(--chart-1)" },
 } satisfies ChartConfig
 
-const endpointRiskData = [
-  { endpoint: "/api/auth/login", findings: 9 },
-  { endpoint: "/api/users/{id}", findings: 8 },
-  { endpoint: "/api/orders", findings: 6 },
-  { endpoint: "/api/payments/init", findings: 5 },
-  { endpoint: "/api/reports/export", findings: 4 },
-]
+function labelDay(iso: string): string {
+  const d = new Date(iso + "T00:00:00Z")
+  return d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })
+}
 
-const endpointRiskConfig = {
-  findings: { label: "Findings", color: "var(--chart-4)" },
-} satisfies ChartConfig
+function buildFallbackTrend(): { day: string; critical: number; high: number; medium: number; low: number }[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - (6 - i))
+    return { day: d.toLocaleDateString("en-US", { weekday: "short" }), critical: 0, high: 0, medium: 0, low: 0 }
+  })
+}
 
-const dataClassData = [
-  { name: "PII", value: 39, fill: "var(--color-pii)" },
-  { name: "Secrets", value: 26, fill: "var(--color-secrets)" },
-  { name: "Financial", value: 21, fill: "var(--color-financial)" },
-  { name: "Public", value: 14, fill: "var(--color-public)" },
-]
-
-const dataClassConfig = {
-  pii: { label: "PII", color: "var(--chart-1)" },
-  secrets: { label: "Secrets", color: "var(--chart-5)" },
-  financial: { label: "Financial", color: "var(--chart-4)" },
-  public: { label: "Public", color: "var(--chart-2)" },
-} satisfies ChartConfig
-
-export function RiskTrendChart() {
+export function RiskTrendChart({ data }: { data?: DailyIssueCounts[] }) {
+  const chartData = data && data.length > 0
+    ? data.map(d => ({ ...d, day: labelDay(d.day) }))
+    : buildFallbackTrend()
   return (
     <ChartContainer config={riskTrendConfig} className="h-72 w-full">
-      <AreaChart data={riskTrendData} margin={{ left: 8, right: 8, top: 8 }}>
+      <AreaChart data={chartData} margin={{ left: 8, right: 8, top: 8 }}>
         <CartesianGrid vertical={false} strokeDasharray="3 3" />
         <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
         <YAxis tickLine={false} axisLine={false} width={30} />
         <ChartTooltip content={<ChartTooltipContent />} />
         <ChartLegend content={<ChartLegendContent />} />
-        <Area
-          type="monotone"
-          dataKey="critical"
-          stackId="a"
-          stroke="var(--color-critical)"
-          fill="var(--color-critical)"
-          fillOpacity={0.35}
-        />
-        <Area
-          type="monotone"
-          dataKey="high"
-          stackId="a"
-          stroke="var(--color-high)"
-          fill="var(--color-high)"
-          fillOpacity={0.28}
-        />
-        <Area
-          type="monotone"
-          dataKey="medium"
-          stackId="a"
-          stroke="var(--color-medium)"
-          fill="var(--color-medium)"
-          fillOpacity={0.2}
-        />
+        <Area type="monotone" dataKey="critical" stackId="a" stroke="var(--color-critical)" fill="var(--color-critical)" fillOpacity={0.35} />
+        <Area type="monotone" dataKey="high"     stackId="a" stroke="var(--color-high)"     fill="var(--color-high)"     fillOpacity={0.28} />
+        <Area type="monotone" dataKey="medium"   stackId="a" stroke="var(--color-medium)"   fill="var(--color-medium)"   fillOpacity={0.20} />
       </AreaChart>
     </ChartContainer>
   )
 }
 
-export function EndpointRiskChart() {
+// ─── Top Endpoints by Findings — live bar chart ──────────────────────────────
+
+const endpointConfig = {
+  issue_count: { label: "Findings", color: "var(--chart-4)" },
+} satisfies ChartConfig
+
+const FALLBACK_ENDPOINTS = [{ label: "—", issue_count: 0 }]
+
+export function EndpointRiskChart({ data }: { data?: TopEndpoint[] }) {
+  const chartData = data && data.length > 0
+    ? data.map(e => ({
+        label: (e.path || e.inventory_id.slice(-8)).replace(/\/api\//, "/").substring(0, 22),
+        issue_count: e.issue_count,
+      }))
+    : FALLBACK_ENDPOINTS
   return (
-    <ChartContainer config={endpointRiskConfig} className="h-64 w-full">
-      <BarChart data={endpointRiskData} margin={{ left: 0, right: 12, top: 8 }}>
+    <ChartContainer config={endpointConfig} className="h-64 w-full">
+      <BarChart data={chartData} margin={{ left: 0, right: 12, top: 8 }}>
         <CartesianGrid vertical={false} strokeDasharray="3 3" />
-        <XAxis
-          dataKey="endpoint"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          tickFormatter={(value: string) => value.replace("/api/", "")}
-        />
-        <YAxis tickLine={false} axisLine={false} width={24} />
+        <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 10, fill: "#94a3b8" }} />
+        <YAxis tickLine={false} axisLine={false} width={24} tick={{ fontSize: 11, fill: "#94a3b8" }} />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="findings" radius={[6, 6, 0, 0]} fill="var(--color-findings)" />
+        <Bar dataKey="issue_count" name="Findings" radius={[6, 6, 0, 0]} fill="var(--color-issue_count)" />
       </BarChart>
     </ChartContainer>
   )
 }
 
-export function DataClassChart() {
+// ─── Data Classification Donut — live sensitive-data breakdown ────────────────
+
+const DATA_COLORS = {
+  pii:       "#f59e0b",
+  financial: "#f43f5e",
+  secrets:   "#8b5cf6",
+  other:     "#10b981",
+}
+
+const dataClassConfig = {
+  pii:       { label: "PII",       color: DATA_COLORS.pii       },
+  financial: { label: "Financial", color: DATA_COLORS.financial  },
+  secrets:   { label: "Secrets",   color: DATA_COLORS.secrets    },
+  other:     { label: "Other",     color: DATA_COLORS.other      },
+} satisfies ChartConfig
+
+const CustomTooltip = ({ active, payload }: {
+  active?: boolean
+  payload?: { name: string; value: number; fill: string }[]
+}) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs shadow-xl">
+      <p style={{ color: payload[0].fill }} className="font-semibold">
+        {payload[0].name}: <span className="text-slate-200">{payload[0].value} endpoints</span>
+      </p>
+    </div>
+  )
+}
+
+export function DataClassChart({ data }: { data?: SensitiveDataBreakdown }) {
+  const chartData = [
+    { name: "PII",       value: data?.pii       ?? 0, fill: DATA_COLORS.pii       },
+    { name: "Financial", value: data?.financial  ?? 0, fill: DATA_COLORS.financial },
+    { name: "Secrets",   value: data?.secrets    ?? 0, fill: DATA_COLORS.secrets   },
+    { name: "Other",     value: data?.other      ?? 0, fill: DATA_COLORS.other     },
+  ]
+  const hasData = chartData.some(d => d.value > 0)
+  // Show demo data when empty so the chart renders meaningfully
+  const displayData = hasData ? chartData : [
+    { name: "PII",       value: 39, fill: DATA_COLORS.pii       },
+    { name: "Financial", value: 26, fill: DATA_COLORS.financial },
+    { name: "Secrets",   value: 21, fill: DATA_COLORS.secrets   },
+    { name: "Other",     value: 14, fill: DATA_COLORS.other     },
+  ]
   return (
     <ChartContainer config={dataClassConfig} className="h-56 w-full">
       <PieChart>
-        <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-        <ChartLegend
-          content={<ChartLegendContent nameKey="name" />}
-          verticalAlign="bottom"
-        />
-        <Pie
-          data={dataClassData}
-          dataKey="value"
-          nameKey="name"
-          innerRadius={52}
-          outerRadius={84}
-          paddingAngle={4}
-          strokeWidth={0}
-        />
+        <ChartTooltip content={<CustomTooltip />} />
+        <ChartLegend content={<ChartLegendContent nameKey="name" />} verticalAlign="bottom" />
+        <Pie data={displayData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={84} paddingAngle={4} strokeWidth={0}>
+          {displayData.map(entry => <Cell key={entry.name} fill={entry.fill} />)}
+        </Pie>
       </PieChart>
     </ChartContainer>
   )

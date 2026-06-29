@@ -1,9 +1,7 @@
 import { AppSidebar } from "@/components/sidebar"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
+import { SidebarInset } from "@/components/ui/sidebar"
 import { Protected } from "@/components/auth/protected"
+import { DashboardShell } from "@/components/quick-start/dashboard-shell"
 
 export default function DashboardLayout({
   children,
@@ -12,12 +10,12 @@ export default function DashboardLayout({
 }) {
   return (
     <Protected>
-      <SidebarProvider>
+      <DashboardShell>
         <AppSidebar />
         <SidebarInset>
           {children}
         </SidebarInset>
-      </SidebarProvider>
+      </DashboardShell>
     </Protected>
   )
 }

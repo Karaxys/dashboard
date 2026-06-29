@@ -19,7 +19,9 @@ import {
   Bug,
   Crosshair,
   Radio,
+  Zap,
 } from "lucide-react"
+import { useQuickStart } from "@/components/quick-start/quick-start-context"
 
 import {
   Avatar,
@@ -127,6 +129,7 @@ function initialsFromName(name: string, email: string): string {
 export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
   const { user, account, logout } = useAuth()
+  const { open: openQuickStart } = useQuickStart()
   const displayName = user?.name?.trim() || user?.email || "Account"
   const displayEmail = account?.name || user?.email || ""
   const initials = initialsFromName(user?.name || "", user?.email || "")
@@ -159,6 +162,22 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        {/* Quick Start — always visible, triggers the slide-over sheet */}
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={openQuickStart}
+                className="bg-purple-600/15 border border-purple-500/25 text-purple-300 hover:bg-purple-600/25 hover:text-purple-200 transition-colors"
+                tooltip="Quick Start"
+              >
+                <Zap className="size-4 text-purple-400" />
+                <span className="font-semibold">Quick Start</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarMenu>

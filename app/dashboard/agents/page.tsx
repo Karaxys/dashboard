@@ -20,10 +20,20 @@ import {
 } from "@/components/ui/tooltip"
 import {
   Activity, AlertTriangle, Check, CheckCircle2, ChevronDown, Clock,
-  Copy, ExternalLink, Globe, Loader2, Plus, Radio, RefreshCcw,
-  Server, Shield, Trash2, Wifi, WifiOff, Zap,
+  Copy, Eye, EyeOff, ExternalLink, Globe, Loader2, Plus, Radio, RefreshCcw,
+  RotateCcw, Server, Shield, Trash2, Wifi, WifiOff, Zap,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api"
+
+interface IngestTokenInfo {
+  id: string
+  token_prefix: string
+  token: string
+  ingest_url: string
+  created_at: string
+  rotated_at?: string
+  last_used_at?: string
+}
 
 interface DataSource {
   id: string
@@ -105,6 +115,13 @@ function AgentsPageContent() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
+  // Account ingest token
+  const [tokenInfo, setTokenInfo] = useState<IngestTokenInfo | null>(null)
+  const [tokenLoading, setTokenLoading] = useState(false)
+  const [tokenError, setTokenError] = useState<string | null>(null)
+  const [tokenVisible, setTokenVisible] = useState(false)
+  const [rotating, setRotating] = useState(false)
+
   // Create source form
   const [showCreate, setShowCreate] = useState(false)
   const [newType, setNewType] = useState("EBPF_LINUX")
@@ -140,6 +157,35 @@ function AgentsPageContent() {
   }, [])
 
   useEffect(() => { fetchAll() }, [fetchAll])
+
+  const fetchToken = useCallback(async () => {
+    setTokenLoading(true)
+    setTokenError(null)
+    try {
+      const data = await apiFetch<IngestTokenInfo>("/account/ingest-token")
+      setTokenInfo(data)
+    } catch (e: unknown) {
+      setTokenError(e instanceof Error ? e.message : "Failed to load ingest token")
+    } finally {
+      setTokenLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchToken() }, [fetchToken])
+
+  const rotateToken = async () => {
+    setRotating(true)
+    setTokenError(null)
+    try {
+      const data = await apiFetch<IngestTokenInfo>("/account/ingest-token/rotate", { method: "POST" })
+      setTokenInfo(data)
+      setTokenVisible(true)
+    } catch (e: unknown) {
+      setTokenError(e instanceof Error ? e.message : "Failed to rotate token")
+    } finally {
+      setRotating(false)
+    }
+  }
 
   const createSource = async () => {
     setCreating(true)
@@ -250,6 +296,85 @@ function AgentsPageContent() {
             </div>
           ))}
         </div>
+
+        {/* Account Ingest Token */}
+        <Card className="glass-panel border-purple-500/20">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Zap className="size-4 text-purple-400" />
+                <CardTitle className="text-sm">Account Ingest Token</CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                {tokenInfo && (
+                  <Button
+                    variant="ghost" size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-slate-200"
+                    onClick={() => setTokenVisible(v => !v)}
+                  >
+                    {tokenVisible
+                      ? <><EyeOff className="size-3 mr-1.5" />Hide</>
+                      : <><Eye className="size-3 mr-1.5" />Show</>}
+                  </Button>
+                )}
+                <Button
+                  variant="outline" size="sm"
+                  className="h-7 text-xs glass-chip border-white/10"
+                  disabled={rotating || tokenLoading}
+                  onClick={rotateToken}
+                >
+                  <RotateCcw className={`size-3 mr-1.5 ${rotating ? "animate-spin" : ""}`} />
+                  Rotate
+                </Button>
+              </div>
+            </div>
+            <CardDescription className="text-xs">
+              Use this token with <code className="text-purple-300">KARAXYS_ACCOUNT_TOKEN</code> in your collector command. Always accessible — never expires unless rotated.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {tokenLoading && <Skeleton className="h-9 rounded-lg bg-white/5" />}
+            {tokenError && (
+              <p className="text-xs text-rose-400">{tokenError}</p>
+            )}
+            {!tokenLoading && tokenInfo && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-black/30 border border-white/8">
+                  <code className="flex-1 font-mono text-xs text-slate-300 truncate">
+                    {tokenVisible ? tokenInfo.token : `${tokenInfo.token_prefix}${"•".repeat(32)}`}
+                  </code>
+                  <button
+                    onClick={() => copyText(tokenInfo.token, "ingest-token")}
+                    className="shrink-0 text-muted-foreground hover:text-slate-200 transition-colors"
+                  >
+                    {copiedId === "ingest-token"
+                      ? <Check className="size-3.5 text-emerald-400" />
+                      : <Copy className="size-3.5" />}
+                  </button>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span>Ingest URL:&nbsp;
+                    <code className="text-slate-400 font-mono">{tokenInfo.ingest_url}</code>
+                    <button
+                      onClick={() => copyText(tokenInfo.ingest_url, "ingest-url")}
+                      className="ml-1.5 inline-flex text-muted-foreground hover:text-slate-200 transition-colors"
+                    >
+                      {copiedId === "ingest-url"
+                        ? <Check className="size-3 text-emerald-400" />
+                        : <Copy className="size-3" />}
+                    </button>
+                  </span>
+                  {tokenInfo.last_used_at && (
+                    <span>Last used: {new Date(tokenInfo.last_used_at).toLocaleDateString()}</span>
+                  )}
+                  {tokenInfo.rotated_at && (
+                    <span>Rotated: {new Date(tokenInfo.rotated_at).toLocaleDateString()}</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Create data source form */}
         {showCreate && (

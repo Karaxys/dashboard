@@ -40,8 +40,8 @@ interface Connector {
 const CONNECTORS: Connector[] = [
   {
     id: "ebpf_docker",
-    label: "eBPF — Docker",
-    description: "Zero-code passive capture on any Linux host running Docker.",
+    label: "eBPF — Linux",
+    description: "Zero-code passive capture on any Linux host. Requires Docker and root access.",
     badge: "Recommended",
     badgeCls: "bg-purple-500/15 text-purple-300 border-purple-500/30",
   },
@@ -81,12 +81,18 @@ function buildCommand(id: ConnectorID, ingestURL: string, token: string): string
   switch (id) {
     case "ebpf_docker":
       return [
-        "docker run -d \\",
-        "  --name karaxys-agent \\",
-        "  --pid host --privileged \\",
+        "# Run on any Linux host (x86-64 or arm64). Requires Docker + root.",
+        "# Captures all HTTP traffic on the host and streams it to your backend.",
+        "",
+        "docker run --rm \\",
+        "  --privileged \\",
+        "  --network host \\",
+        "  --pid host \\",
+        "  -v /sys/fs/bpf:/sys/fs/bpf \\",
+        "  -v /sys/kernel/debug:/sys/kernel/debug:ro \\",
         `  -e KARAXYS_INGEST_URL="${ingestURL}" \\`,
         `  -e KARAXYS_ACCOUNT_TOKEN="${token}" \\`,
-        "  ghcr.io/karaxys/ebpf-agent:latest",
+        "  ghcr.io/karaxys/capture:latest",
       ].join("\n")
 
     case "ebpf_kubernetes":
@@ -173,10 +179,26 @@ export function QuickStartSheet() {
     }
   }
 
+  const copyToClipboard = (text: string) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text)
+    }
+    // Fallback for non-HTTPS contexts (e.g. accessing via LAN IP)
+    const ta = document.createElement("textarea")
+    ta.value = text
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none"
+    document.body.appendChild(ta)
+    ta.focus()
+    ta.select()
+    document.execCommand("copy")
+    document.body.removeChild(ta)
+    return Promise.resolve()
+  }
+
   const copyCommand = () => {
     if (!tokenInfo) return
     const cmd = buildCommand(selected, tokenInfo.ingest_url, tokenInfo.token)
-    navigator.clipboard.writeText(cmd)
+    copyToClipboard(cmd)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -300,7 +322,7 @@ export function QuickStartSheet() {
                 </code>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(tokenInfo.token)
+                    copyToClipboard(tokenInfo.token)
                     setCopied(true)
                     setTimeout(() => setCopied(false), 2000)
                   }}

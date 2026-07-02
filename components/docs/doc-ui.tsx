@@ -12,8 +12,8 @@ export function DocPage({ children }: { children: ReactNode }) {
 export function DocLede({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return (
     <header className="border-b border-slate-800/60 pb-8">
-      <p className="text-xs font-semibold uppercase tracking-widest text-amber-400">{eyebrow}</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
+      <p className="font-mono text-xs font-semibold uppercase tracking-widest text-amber-400">{eyebrow}</p>
+      <h1 className="mt-2 font-mono text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
       <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-400">{description}</p>
     </header>
   )
@@ -21,7 +21,8 @@ export function DocLede({ eyebrow, title, description }: { eyebrow: string; titl
 
 export function H2({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <h2 id={id} className="mt-12 scroll-mt-24 text-xl font-semibold tracking-tight text-white">
+    <h2 id={id} className="mt-12 flex scroll-mt-24 items-center gap-2.5 font-mono text-xl font-semibold tracking-tight text-white">
+      <span aria-hidden className="text-amber-500/60">#</span>
       {children}
     </h2>
   )
@@ -29,7 +30,7 @@ export function H2({ id, children }: { id?: string; children: ReactNode }) {
 
 export function H3({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <h3 id={id} className="mt-8 scroll-mt-24 text-base font-semibold text-slate-100">
+    <h3 id={id} className="mt-8 scroll-mt-24 font-mono text-base font-semibold text-slate-100">
       {children}
     </h3>
   )
@@ -102,7 +103,7 @@ export function Callout({ type = "info", title, children }: { type?: keyof typeo
     <div className={`mt-6 flex gap-3 rounded-xl border p-4 ${c.ring}`}>
       <Icon className={`mt-0.5 size-4 shrink-0 ${c.tint}`} />
       <div className="min-w-0 text-sm leading-relaxed text-slate-300">
-        {title && <p className={`mb-1 font-semibold ${c.tint}`}>{title}</p>}
+        {title && <p className={`mb-1 font-mono text-sm font-semibold ${c.tint}`}>{title}</p>}
         {children}
       </div>
     </div>
@@ -112,11 +113,11 @@ export function Callout({ type = "info", title, children }: { type?: keyof typeo
 export function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
     <div className="mt-6 flex gap-4">
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 font-mono text-xs font-semibold text-amber-400">
         {n}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-100">{title}</p>
+        <p className="font-mono text-sm font-semibold text-slate-100">{title}</p>
         <div className="mt-1 text-sm leading-relaxed text-slate-400">{children}</div>
       </div>
     </div>
@@ -127,7 +128,7 @@ export function DocTable({ head, rows }: { head: string[]; rows: ReactNode[][] }
   return (
     <div className="mt-6 overflow-x-auto rounded-xl border border-slate-800">
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-900/60 text-xs uppercase tracking-wider text-slate-500">
+        <thead className="bg-slate-900/60 font-mono text-xs uppercase tracking-wider text-slate-500">
           <tr>
             {head.map((h) => (
               <th key={h} className="whitespace-nowrap px-4 py-3 font-semibold">{h}</th>
@@ -157,7 +158,7 @@ export function NextSteps({ links }: { links: { label: string; href: string; des
           href={l.href}
           className="group rounded-xl border border-slate-800 bg-slate-950/60 p-5 transition-colors hover:border-slate-700 hover:bg-slate-950"
         >
-          <p className="flex items-center justify-between text-sm font-semibold text-slate-100">
+          <p className="flex items-center justify-between font-mono text-sm font-semibold text-slate-100">
             {l.label}
             <ArrowRight className="size-4 text-amber-400 transition-transform group-hover:translate-x-0.5" />
           </p>

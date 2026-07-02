@@ -24,8 +24,8 @@ export function PageHeader({
   return (
     <section className="py-20">
       <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-        <p className="text-sm font-semibold uppercase tracking-widest text-amber-400">{eyebrow}</p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">{title}</h1>
+        <p className="font-mono text-sm font-semibold uppercase tracking-widest text-amber-400">{eyebrow}</p>
+        <h1 className="mt-3 font-mono text-4xl font-bold tracking-tight text-white sm:text-5xl">{title}</h1>
         <p className="mx-auto mt-4 max-w-2xl text-slate-400">{description}</p>
       </div>
     </section>

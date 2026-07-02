@@ -101,6 +101,54 @@ curl 'https://your-host/scan-results?suite_id=<suite_id>&limit=200' \\
   -H 'Authorization: Bearer <access_token>'`}
       </CodeBlock>
 
+      <H2>Conventions</H2>
+      <P>
+        Every resource follows the same rules, so once you have called one endpoint you know how the rest
+        behave.
+      </P>
+      <H3>Pagination</H3>
+      <P>
+        List endpoints are paginated with <Code>limit</Code> and <Code>offset</Code> query parameters and
+        return the total alongside the page, so you can page through large inventories deterministically:
+      </P>
+      <CodeBlock title="GET /inventory?limit=50&offset=100">
+{`{
+  "items": [ … 50 endpoints … ],
+  "total": 3187,
+  "limit": 50,
+  "offset": 100
+}`}
+      </CodeBlock>
+      <H3>Errors</H3>
+      <P>
+        Errors use standard HTTP status codes with a JSON body carrying a stable machine-readable{" "}
+        <Code>error</Code> code and a human-readable <Code>message</Code>. Handle the status class, and branch
+        on the code when you need specifics:
+      </P>
+      <DocTable
+        head={["Status", "When you'll see it"]}
+        rows={[
+          [<Code key="1">400</Code>, "The request body failed validation — a missing field or an unknown test type."],
+          [<Code key="2">401</Code>, "Missing, expired, or invalid session token. Refresh and retry."],
+          [<Code key="3">403</Code>, "Authenticated, but your role lacks permission for this action (see RBAC)."],
+          [<Code key="4">404</Code>, "The resource does not exist, or belongs to another tenant and is therefore invisible to you."],
+          [<Code key="5">409</Code>, "The request conflicts with current state — for example, a target that failed admission policy."],
+          [<Code key="6">429</Code>, "You are being rate limited. Back off using the Retry-After header."],
+        ]}
+      />
+      <CodeBlock title="error body">
+{`HTTP/1.1 403 Forbidden
+{
+  "error": "insufficient_role",
+  "message": "Role 'read-only' cannot trigger scans."
+}`}
+      </CodeBlock>
+      <Callout type="warn" title="Tenant isolation shows up as 404, not 403">
+        A resource in another account is not merely forbidden — it is invisible. Requests for it return{" "}
+        <Code>404</Code> rather than <Code>403</Code>, so the API never even confirms that an object belonging
+        to another tenant exists.
+      </Callout>
+
       <H2>Findings & issues</H2>
       <DocTable
         head={["Method & path", "Description"]}

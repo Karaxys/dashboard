@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { DocPage, DocLede, H2, P, Strong, DocTable, NextSteps, Callout } from "@/components/docs/doc-ui"
+import { DocPage, DocLede, H2, H3, P, Strong, Code, CodeBlock, DocTable, NextSteps, Callout } from "@/components/docs/doc-ui"
 
 export const metadata: Metadata = {
   title: "Core concepts — Karaxys Docs",
@@ -39,6 +39,75 @@ export default function ConceptsPage() {
         test type per endpoint — and each job that detects a vulnerability produces a{" "}
         <Strong>finding</Strong>. Findings are then folded into durable <Strong>issues</Strong>.
       </P>
+      <CodeBlock title="object lifecycle">
+{`conversation   GET /users/1042  ┐
+conversation   GET /users/1043  ├─ normalize ─►  endpoint   GET /users/{id}
+conversation   GET /users/1044  ┘                   │
+                                                     │  classify fields
+                                                     ▼
+                                          sensitive data: email, phone
+                                                     │
+                                launch suite ◄───────┘
+                                     │  fan out (one job per applicable test type)
+                     ┌───────────────┼───────────────┐
+                     ▼               ▼               ▼
+              scan job BOLA   scan job BFLA   scan job SQLI
+                     │               │               │
+                     ▼  (vuln found) │  (clean)      │  (clean)
+                  finding            ─               ─
+                     │  deduplicate on stable fingerprint
+                     ▼
+                   issue   (tracked over time, status: open)`}
+      </CodeBlock>
+
+      <H3>A worked example</H3>
+      <P>
+        Suppose an application serves three requests: <Code>GET /users/1042</Code>,{" "}
+        <Code>GET /users/1043</Code>, and <Code>GET /users/1044</Code>. Each is captured as its own{" "}
+        <Strong>conversation</Strong>. Because the trailing segment varies while everything else is constant,
+        normalization collapses all three into a single <Strong>endpoint</Strong>,{" "}
+        <Code>{`GET /users/{id}`}</Code>. As the response bodies flow through, an <Code>email</Code> and a{" "}
+        <Code>phone</Code> field are recognized and attached as <Strong>sensitive-data</Strong> classifications.
+        Launching the OWASP API Top 10 <Strong>suite</Strong> against that endpoint fans out into one{" "}
+        <Strong>scan job</Strong> per applicable <Strong>test type</Strong>. The BOLA job proves that one user
+        can read another&apos;s record and emits a <Strong>finding</Strong>; that finding deduplicates into an{" "}
+        <Strong>issue</Strong> you can triage. Re-running the suite next week updates the same issue instead of
+        creating a second.
+      </P>
+
+      <H2>Object states</H2>
+      <P>
+        Several objects move through a lifecycle. Knowing the states makes the dashboard and API responses
+        legible:
+      </P>
+      <H3>Scan job status</H3>
+      <DocTable
+        head={["Status", "Meaning"]}
+        rows={[
+          [<Code key="1">queued</Code>, "The job has been created and is waiting for a worker to claim it under admission control."],
+          [<Code key="2">running</Code>, "A worker holds the job's lease and is executing its template against the target."],
+          [<Code key="3">completed</Code>, "Execution finished. The job either produced a finding or confirmed the endpoint was clean for that test."],
+          [<Code key="4">skipped</Code>, "Applicability filtering determined the test was not meaningful for the endpoint — reported with a reason."],
+          [<Code key="5">failed</Code>, "Execution errored (for example, the target was unreachable). Isolated to this job; the rest of the suite continues."],
+        ]}
+      />
+      <H3>Issue status</H3>
+      <DocTable
+        head={["Status", "Meaning"]}
+        rows={[
+          [<Code key="1">open</Code>, "A live issue awaiting triage or remediation."],
+          [<Code key="2">acknowledged</Code>, "A human has seen the issue and accepted it as real work to be done."],
+          [<Code key="3">resolved</Code>, "The underlying vulnerability is believed fixed; a subsequent scan that no longer reproduces it confirms this."],
+          [<Code key="4">false positive</Code>, "Triaged as not a real vulnerability; suppressed from the active list but retained for audit."],
+        ]}
+      />
+
+      <Callout type="tip" title="Findings vs. issues — why both exist">
+        A <Strong>finding</Strong> is a single observation from a single scan job at a point in time — it is
+        immutable evidence. An <Strong>issue</Strong> is the durable, deduplicated thing you actually manage:
+        many findings across many scans collapse into one issue so your queue reflects distinct problems, not
+        scan history.
+      </Callout>
 
       <Callout type="info" title="Deduplication key">
         Karaxys deduplicates findings into issues using a stable fingerprint of the tenant, project,

@@ -41,17 +41,17 @@ export function Resources() {
           </h2>
         </div>
         <Link
-          href="/resources"
+          href="/blog"
           className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
         >
-          View all resources <ArrowUpRight className="size-4" />
+          View all posts <ArrowUpRight className="size-4" />
         </Link>
       </Reveal>
 
       <div className="mt-12 grid gap-4 lg:grid-cols-3">
         {posts.map((post, i) => (
           <Reveal key={post.title} delay={i * 80}>
-            <Link href="/resources#blog" className="group block h-full">
+            <Link href="/blog" className="group block h-full">
               <div className="flex h-full flex-col rounded-xl border border-white/8 bg-white/3 p-6 transition-colors hover:bg-white/5">
                 <div className="flex items-center gap-2">
                   <span className={`rounded px-2 py-0.5 text-xs font-medium ${categoryStyle[post.category] ?? "bg-white/10 text-white/60"}`}>

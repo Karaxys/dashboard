@@ -10,7 +10,6 @@ import {
   Newspaper,
   History,
   Building2,
-  Briefcase,
   Lock,
   Mail,
   Eye,
@@ -53,19 +52,18 @@ export const navMenus: NavMenu[] = [
   {
     label: "Resources",
     items: [
-      { label: "Blog", href: "/resources#blog", description: "Research & product updates", icon: Newspaper },
-      { label: "Resource Library", href: "/resources#library", description: "Guides, briefs & datasheets", icon: BookOpen },
+      { label: "Blog", href: "/blog", description: "Research & product updates", icon: Newspaper },
+      { label: "Resource Library", href: "/docs", description: "Guides, briefs & datasheets", icon: BookOpen },
       { label: "Documentation", href: "/docs", description: "Set up and operate Karaxys", icon: FileText },
       { label: "Changelog", href: "/docs#changelog", description: "What shipped recently", icon: History },
     ],
   },
   {
-    label: "Company",
+    label: "About",
     items: [
-      { label: "About", href: "/resources#about", description: "Our mission & approach", icon: Building2 },
-      { label: "Security", href: "#security", description: "How we protect your data", icon: Lock },
-      { label: "Careers", href: "/resources#careers", description: "Join the team", icon: Briefcase },
-      { label: "Contact", href: "/resources#contact", description: "Talk to us", icon: Mail },
+      { label: "About", href: "/resources#about", description: "What Karaxys is built for", icon: Building2 },
+      { label: "Security", href: "#security", description: "How your data is protected", icon: Lock },
+      { label: "Contact", href: "/resources#contact", description: "Get in touch", icon: Mail },
     ],
   },
 ]

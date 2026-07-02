@@ -30,7 +30,7 @@ export default function BlogIndexPage() {
                   href={`/blog/${post.slug}`}
                   className="group flex h-full flex-col rounded-xl border border-slate-800 bg-slate-950/60 p-6 transition-colors hover:border-slate-700 hover:bg-slate-950"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 font-mono">
                     <Badge
                       variant="outline"
                       className={`text-xs ${categoryColor[post.category] ?? "border-slate-700 text-slate-400"}`}
@@ -41,7 +41,7 @@ export default function BlogIndexPage() {
                     <span className="text-xs text-slate-600">·</span>
                     <span className="text-xs text-slate-500">{post.readTime}</span>
                   </div>
-                  <h2 className="mt-4 text-base font-semibold leading-snug text-slate-100">{post.title}</h2>
+                  <h2 className="mt-4 font-mono text-base font-semibold leading-snug text-slate-100">{post.title}</h2>
                   <p className="mt-2 text-sm leading-relaxed text-slate-400">{post.excerpt}</p>
                   <span className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-medium text-amber-400 group-hover:underline">
                     Read more <ArrowRight className="size-3.5" />

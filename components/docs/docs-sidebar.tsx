@@ -11,7 +11,7 @@ export function DocsSidebar() {
       <nav className="sticky top-24 space-y-6">
         {docsNav.map((section) => (
           <div key={section.heading}>
-            <p className="px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">
+            <p className="px-3 font-mono text-xs font-semibold uppercase tracking-widest text-slate-500">
               {section.heading}
             </p>
             <ul className="mt-2 space-y-0.5">
@@ -21,7 +21,7 @@ export function DocsSidebar() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                      className={`block rounded-md px-3 py-1.5 font-mono text-[13px] transition-colors ${
                         active
                           ? "bg-amber-500/10 font-medium text-amber-400"
                           : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"

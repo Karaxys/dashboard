@@ -24,10 +24,30 @@ export default function ScannerPage() {
         rather than a bespoke one.
       </P>
 
+      <H2>Anatomy of a test type</H2>
+      <P>
+        A <Strong>test type</Strong> is a single security check backed by a declarative template. Understanding
+        the template&apos;s four parts explains how detection stays precise. A template describes the request
+        to send, the <Strong>matchers</Strong> that decide whether the response indicates a vulnerability, any
+        values to <Strong>extract</Strong> for a follow-up request, and the metadata that sets severity:
+      </P>
+      <CodeBlock title="test type, conceptually">
+{`test:      SQL_INJECTION (error-based)
+requires:  an injectable parameter (query or body)
+send:      inject payload into each candidate parameter
+match:     response contains a genuine SQL error signature
+           AND response differs meaningfully from the baseline
+severity:  raised if the endpoint carries sensitive data
+proof:     the exact request + the matched response fragment`}
+      </CodeBlock>
+      <P>
+        Because the check is declarative, the same engine runs every test type uniformly — which is what makes
+        the library easy to extend and the results consistent across checks.
+      </P>
+
       <H2>Test types</H2>
       <P>
-        A <Strong>test type</Strong> is a single security check backed by a template. Karaxys ships a curated
-        library focused on the vulnerability classes that matter most for APIs:
+        Karaxys ships a curated library focused on the vulnerability classes that matter most for APIs:
       </P>
       <DocTable
         head={["Category", "Test types"]}

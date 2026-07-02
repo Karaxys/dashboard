@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { DocPage, DocLede, H2, P, Strong, UL, LI, DocTable, Callout, NextSteps } from "@/components/docs/doc-ui"
+import { DocPage, DocLede, H2, H3, P, Strong, CodeBlock, UL, LI, DocTable, Callout, NextSteps } from "@/components/docs/doc-ui"
 
 export const metadata: Metadata = {
   title: "Security & privacy — Karaxys Docs",
@@ -13,6 +13,24 @@ export default function SecurityPage() {
         eyebrow="Platform"
         title="Security & privacy"
         description="Karaxys is a security tool, so it holds itself to a high bar. This page covers how access is controlled, how sensitive data is handled, and how the scanner is prevented from ever being turned against systems you do not own."
+      />
+
+      <H2>What the platform is trusted with</H2>
+      <P>
+        Karaxys is unusual among security tools in how much sensitive material passes through it: it observes
+        real production traffic, including credentials in flight and personal data in payloads, and it holds an
+        active scanner capable of making requests against real systems. The design starts from that reality and
+        works backward — every control below exists to reduce what an attacker, a bug, or a careless operator
+        could do with that access.
+      </P>
+      <DocTable
+        head={["Asset at risk", "Primary protection"]}
+        rows={[
+          [<Strong key="1">Sensitive values in captured traffic</Strong>, "Redacted before persistence, so the durable store never holds secrets in the clear."],
+          [<Strong key="2">Your API estate as a scan target</Strong>, "Inventory-only targeting plus SSRF-style address filtering, so the scanner cannot be steered at internal services."],
+          [<Strong key="3">One tenant&apos;s data vs. another&apos;s</Strong>, "Every query is scoped to the caller's account; there is no cross-tenant read path."],
+          [<Strong key="4">Account access</Strong>, "Short-lived session tokens, server-enforced RBAC, and an append-only audit trail."],
+        ]}
       />
 
       <H2>Authentication & accounts</H2>
@@ -43,6 +61,24 @@ export default function SecurityPage() {
         values are <Strong>redacted before they are stored</Strong>. The system retains what it needs to be
         useful — that a field exists, its type, and that it was classified as sensitive — without persisting
         the secret itself.
+      </P>
+      <P>
+        Concretely, when a field is classified as sensitive, its value is replaced with a placeholder that
+        preserves the <em>shape</em> of the data without the data itself. Analysts still see the structure of a
+        request or response; they do not see the secret:
+      </P>
+      <CodeBlock title="before redaction → after redaction">
+{`{                               {
+  "id": 1042,                     "id": 1042,
+  "email": "alice@corp.com",  →   "email": "«redacted:email»",
+  "card": "4111 1111 1111 1111",  "card":  "«redacted:pan»",
+  "role": "admin"                 "role":  "admin"
+}                               }`}
+      </CodeBlock>
+      <P>
+        Redaction happens in the analyzer, <Strong>before the durable write</Strong> — not as a display-time
+        filter over stored secrets. The distinction matters: a display filter still leaves plaintext in the
+        database. Redacting on the way in means the secret was never persisted at all.
       </P>
       <Callout type="security" title="Evidence without exposure">
         Findings and inventory are designed to be safe to share with your team. Reproduction details are
@@ -87,6 +123,26 @@ export default function SecurityPage() {
           per-target rate limiting and a global concurrency cap.
         </LI>
       </UL>
+      <H3>How a target is admitted</H3>
+      <P>
+        Before any request is sent, a scan target passes through a resolution and policy check. The address it
+        resolves to — not just the hostname you were shown — is evaluated, which closes the DNS-rebinding gap
+        where a public name points at a private address:
+      </P>
+      <CodeBlock title="target admission">
+{`inventory endpoint  ──►  resolve host to address
+                             │
+                             ├─ private / loopback   (10/8, 127/8, 192.168/16)   ──►  BLOCK
+                             ├─ link-local / metadata (169.254.169.254)          ──►  BLOCK
+                             ├─ reserved / multicast                             ──►  BLOCK
+                             ├─ on operator deny list                            ──►  BLOCK
+                             └─ otherwise / on allow list                        ──►  ADMIT`}
+      </CodeBlock>
+      <P>
+        The cloud metadata endpoint is called out deliberately: it is the classic SSRF prize, because reaching
+        it can hand an attacker short-lived cloud credentials. Blocking that range by default means even a
+        genuine SSRF-style flaw in a target cannot be turned into credential theft <em>through</em> the scanner.
+      </P>
 
       <Callout type="security" title="Out-of-band detection is opt-in">
         The scanner&apos;s out-of-band vulnerability detection is off unless you enable it, and can be pointed

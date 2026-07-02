@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { DocPage, DocLede, H2, P, Strong, Code, CodeBlock, Step, Callout, NextSteps } from "@/components/docs/doc-ui"
+import { DocPage, DocLede, H2, H3, P, Strong, Code, CodeBlock, Step, UL, LI, DocTable, Callout, NextSteps } from "@/components/docs/doc-ui"
 
 export const metadata: Metadata = {
   title: "Quick start — Karaxys Docs",
@@ -20,6 +20,17 @@ export default function GettingStartedPage() {
         machine to run the backend and dashboard. The capture agent runs on Linux only; the rest of the
         platform is portable.
       </Callout>
+
+      <H3>What you need before you start</H3>
+      <DocTable
+        head={["Requirement", "Why"]}
+        rows={[
+          [<Strong key="1">A recent Linux kernel</Strong>, "The capture agent loads eBPF programs, which need a modern kernel with BPF and BTF support. This is the one hard platform requirement."],
+          [<Strong key="2">A container runtime</Strong>, "The whole stack — backend, dashboard, dependencies, and the agent — ships as container images."],
+          [<Strong key="3">Elevated privileges for the agent</Strong>, "Loading eBPF and attaching to kernel probes requires the capabilities eBPF depends on. Only the agent needs them; the backend does not."],
+          [<Strong key="4">A workload that serves API traffic</Strong>, "There is nothing to see until something makes API calls on the monitored host — your app, its test suite, or replayed requests."],
+        ]}
+      />
 
       <H2>1. Launch the platform</H2>
       <P>
@@ -79,6 +90,45 @@ export default function GettingStartedPage() {
         Authorization tests such as BOLA need credentials to compare what one user can reach versus
         another. Supply attacker and victim tokens in the scan form to unlock these checks; without them,
         those tests are skipped automatically.
+      </Callout>
+
+      <H2>Verify each stage</H2>
+      <P>
+        If something looks wrong, check the pipeline one hop at a time — the same order data flows. Each stage
+        has a clear success signal:
+      </P>
+      <DocTable
+        head={["Stage", "How to confirm it is working"]}
+        rows={[
+          [<Strong key="1">Platform up</Strong>, "Every service in the Compose project reports healthy and the dashboard loads."],
+          [<Strong key="2">Agent connected</Strong>, "The Agents page shows your host as active, having authenticated with its ingest token."],
+          [<Strong key="3">Capture flowing</Strong>, "After you exercise the app, endpoints appear under Inventory within seconds."],
+          [<Strong key="4">Analysis working</Strong>, "New endpoints gain learned schemas and sensitive-data flags as more traffic arrives."],
+          [<Strong key="5">Scanning working</Strong>, "A launched scan streams live job progress and writes findings to Results."],
+        ]}
+      />
+
+      <H2>Troubleshooting</H2>
+      <H3>The inventory stays empty</H3>
+      <P>
+        Traffic is being captured but nothing appears. Work down this list:
+      </P>
+      <UL>
+        <LI><Strong>Is the runtime analyzer running?</Strong> Traffic can be accepted and acknowledged, but without the analyzer the inventory never populates — this is the single most common cause of an empty inventory.</LI>
+        <LI><Strong>Is traffic actually being generated on the monitored host?</Strong> The agent only sees what the host serves or calls. Idle apps produce nothing.</LI>
+        <LI><Strong>Is the port excluded?</Strong> Check that the traffic you expect is not on a port you configured the agent to ignore.</LI>
+        <LI><Strong>Did the agent authenticate?</Strong> A rotated or mistyped ingest token means conversations are rejected at ingestion. The Agents page shows connection state.</LI>
+      </UL>
+      <H3>A scan reports everything as skipped</H3>
+      <P>
+        Skips are informative, not errors — each comes with a reason. The usual cause is missing prerequisites:
+        an authorization test with no attacker/victim tokens supplied, or a body-injection test against an
+        endpoint that takes no request body. Provide the missing auth context, or pick an endpoint whose shape
+        matches the test, and the checks run.
+      </P>
+      <Callout type="warn" title="Scans only target your own inventory">
+        There is no way to point a scan at an arbitrary URL. If an endpoint you want to test is not in the
+        inventory, the fix is to capture its traffic first — not to enter a URL by hand.
       </Callout>
 
       <NextSteps

@@ -41,7 +41,7 @@ export default function Post() {
         rows={[
           [<Strong key="1">Injection & XSS first</Strong>, "Broken object- and function-level authorization first."],
           [<Strong key="2">Browser-based defenses</Strong>, "Server-side checks that assume a scripted, hostile client."],
-          [<Strong key="3">Crawl the site's links</Strong>, "Discover endpoints from real traffic — there are no links to crawl."],
+          [<Strong key="3">Crawl the site&apos;s links</Strong>, "Discover endpoints from real traffic — there are no links to crawl."],
           [<Strong key="4">One app, one origin</Strong>, "Many services, versions, and hosts, changing continuously."],
         ]}
       />

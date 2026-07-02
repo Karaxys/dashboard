@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Radar, ScanSearch, ShieldCheck, Boxes } from "lucide-react"
 import { DocPage, DocLede, H2, P, Strong, NextSteps, DocTable } from "@/components/docs/doc-ui"
-import { Badge } from "@/components/ui/badge"
 
 export const metadata: Metadata = {
   title: "Documentation — Karaxys",
@@ -72,6 +71,24 @@ export default function DocsOverview() {
           [<Strong key="d">Dashboard & API</Strong>, "The interface and REST API for inventory, scans, findings, and account settings."],
         ]}
       />
+
+      <H2 id="changelog">Changelog</H2>
+      <P>
+        A running log of what shipped recently. Newest first.
+      </P>
+      <ol className="mt-6 space-y-0 border-l border-slate-800">
+        {changelog.map((entry) => (
+          <li key={entry.version} className="relative pl-6 pb-6 last:pb-0">
+            <span className="absolute -left-1.25 top-1.5 size-2.5 rounded-full border border-amber-500/40 bg-amber-500/30" />
+            <div className="flex items-center gap-2 font-mono text-xs">
+              <span className="font-semibold text-amber-400">{entry.version}</span>
+              <span className="text-slate-600">·</span>
+              <span className="text-slate-500">{entry.date}</span>
+            </div>
+            <p className="mt-1 text-sm leading-relaxed text-slate-400">{entry.note}</p>
+          </li>
+        ))}
+      </ol>
 
       <NextSteps
         links={[

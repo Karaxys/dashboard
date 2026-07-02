@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { DocPage, DocLede, H2, H3, P, Strong, UL, LI, DocTable, Callout, NextSteps } from "@/components/docs/doc-ui"
+import { DocPage, DocLede, H2, H3, P, Strong, CodeBlock, UL, LI, DocTable, Callout, NextSteps } from "@/components/docs/doc-ui"
 
 export const metadata: Metadata = {
   title: "eBPF capture agent — Karaxys Docs",
@@ -56,6 +56,34 @@ export default function EbpfPage() {
         connections. The userspace assembler stitches them back together — tracking each connection,
         ordering its segments, joining chunked payloads, and reconstructing the full request and response —
         until it has a complete <Strong>conversation</Strong> ready to ship.
+      </P>
+
+      <H3>Lifecycle of one captured request</H3>
+      <P>
+        Following a single API call from the wire to the backend shows how the two halves cooperate:
+      </P>
+      <CodeBlock title="capture lifecycle">
+{`1. app calls write()/SSL_write()   ── plaintext, before encryption
+        │  eBPF probe fires
+        ▼
+2. kernel records {socket, direction, bounded payload slice}
+        │  published to a per-CPU ring buffer
+        ▼
+3. userspace assembler drains the ring buffer
+        │  groups events by connection, orders segments
+        ▼
+4. reassemble request … then the matching response
+        │  join chunked bodies, demux HTTP/2 streams
+        ▼
+5. complete conversation  { method, path, headers, bodies, status }
+        │  enrich with container / workload identity
+        ▼
+6. ship to backend over authenticated HTTPS`}
+      </CodeBlock>
+      <P>
+        The key idea is that the kernel side stays deliberately dumb and fast — it copies bounded slices and
+        moves on — while all the stateful, expensive reconstruction happens in userspace where it can be
+        restarted and scaled without touching the kernel program.
       </P>
 
       <H2>TLS visibility</H2>

@@ -5,27 +5,15 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MarketingShell, PageHeader } from "@/components/landing/marketing-shell"
 import { Reveal } from "@/components/landing/reveal"
+import { blogPosts } from "@/components/blog/posts"
+import { categoryColor } from "@/components/blog/blog-article"
 
 export const metadata: Metadata = {
   title: "Resources — Karaxys",
   description: "Research, guides, and product updates from the Karaxys team.",
 }
 
-const posts = [
-  { category: "Research",    date: "Jun 18, 2026", title: "Anatomy of a BOLA: how one ID became a full data breach",          excerpt: "A walk-through of broken object-level authorization and how passive discovery catches it early." },
-  { category: "Product",     date: "Jun 9, 2026",  title: "Capturing API traffic at the kernel with eBPF",                   excerpt: "Why zero-instrumentation capture beats SDKs and proxies for complete API visibility." },
-  { category: "Guide",       date: "May 30, 2026", title: "A practical playbook for shadow API discovery",                   excerpt: "Find, classify, and govern the APIs your inventory never knew existed." },
-  { category: "Research",    date: "May 21, 2026", title: "Detecting sensitive data exposure without storing secrets",        excerpt: "Redaction-by-default and how Karaxys keeps evidence useful but safe." },
-  { category: "Engineering", date: "May 12, 2026", title: "Scaling an ingestion pipeline with a queue-backed analyzer",      excerpt: "Decoupling capture from analysis to keep ingestion fast under load." },
-  { category: "Guide",       date: "Apr 28, 2026", title: "BFLA and broken function-level authorization in practice",        excerpt: "How role-based test contexts surface privilege escalation paths." },
-]
-
-const categoryColor: Record<string, string> = {
-  Research:    "border-amber-500/30 text-amber-400",
-  Product:     "border-sky-500/30 text-sky-400",
-  Guide:       "border-emerald-500/30 text-emerald-400",
-  Engineering: "border-violet-500/30 text-violet-400",
-}
+const posts = blogPosts
 
 export default function ResourcesPage() {
   return (
@@ -42,8 +30,11 @@ export default function ResourcesPage() {
           <h2 className="text-xl font-bold tracking-tight text-white">From the blog</h2>
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             {posts.map((post, i) => (
-              <Reveal key={post.title} delay={(i % 3) * 80}>
-                <div className="group flex h-full flex-col rounded-xl border border-slate-800 bg-slate-950/60 p-6 transition-colors hover:border-slate-700 hover:bg-slate-950">
+              <Reveal key={post.slug} delay={(i % 3) * 80}>
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="group flex h-full flex-col rounded-xl border border-slate-800 bg-slate-950/60 p-6 transition-colors hover:border-slate-700 hover:bg-slate-950"
+                >
                   <div className="flex items-center gap-3">
                     <Badge
                       variant="outline"
@@ -60,7 +51,7 @@ export default function ResourcesPage() {
                   <span className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-medium text-amber-400 group-hover:underline">
                     Read more <ArrowRight className="size-3.5" />
                   </span>
-                </div>
+                </Link>
               </Reveal>
             ))}
           </div>

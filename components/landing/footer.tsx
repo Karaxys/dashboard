@@ -16,7 +16,7 @@ const columns = [
     title: "Resources",
     links: [
       { label: "Documentation",      href: "/docs" },
-      { label: "Blog",               href: "/resources#blog" },
+      { label: "Blog",               href: "/blog" },
       { label: "Changelog",          href: "/docs#changelog" },
     ],
   },
@@ -33,7 +33,7 @@ const columns = [
     links: [
       { label: "Privacy",            href: "#" },
       { label: "Terms",              href: "#" },
-      { label: "Security",           href: "/resources#security" },
+      { label: "Security",           href: "/docs/security" },
     ],
   },
 ]

@@ -1,11 +1,19 @@
 import type { Metadata } from "next"
 import { Radar, ScanSearch, ShieldCheck, Boxes } from "lucide-react"
 import { DocPage, DocLede, H2, P, Strong, NextSteps, DocTable } from "@/components/docs/doc-ui"
+import { Badge } from "@/components/ui/badge"
 
 export const metadata: Metadata = {
   title: "Documentation — Karaxys",
   description: "How Karaxys discovers, inventories, and security-tests your APIs from real traffic.",
 }
+
+const changelog = [
+  { version: "v0.8", date: "Jul 2026", note: "OWASP-mapped scan suites with live fan-out progress, redesigned scanner, and a full documentation site." },
+  { version: "v0.7", date: "Jun 2026", note: "New marketing site, OAuth sign-in, and a refreshed dashboard shell." },
+  { version: "v0.6", date: "May 2026", note: "Async scanner workers, issue deduplication, and scan progress timelines." },
+  { version: "v0.5", date: "Apr 2026", note: "Queue-backed ingestion and runtime analyzer split into dedicated services." },
+]
 
 const pillars = [
   { icon: Radar, title: "Capture", body: "A Linux eBPF agent observes API traffic at the kernel — no SDKs, no proxies, no code changes." },

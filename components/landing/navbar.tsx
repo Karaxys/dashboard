@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils"
 import { Logo } from "./logo"
 
 const docSections = [
-  { title: "Introduction",   desc: "Get started with Karaxys in less than 15 minutes.",        href: "/docs" },
-  { title: "API Discovery",  desc: "View all your endpoints, hosts, and sensitive data.",       href: "/docs#discovery" },
-  { title: "Detection",      desc: "Detect and block API attacks and vulnerabilities.",          href: "/docs#detection" },
-  { title: "Integrations",   desc: "Connect Karaxys with your existing pipelines.",             href: "/docs#integrations" },
-  { title: "Active Testing", desc: "Test and catch API vulnerabilities with custom tests.",      href: "/docs#testing" },
-  { title: "Settings",       desc: "Configure Karaxys to fit your security needs.",             href: "/docs#settings" },
+  { title: "Introduction",   desc: "What Karaxys is and how the pieces fit together.",           href: "/docs" },
+  { title: "Architecture",   desc: "Services, data flow, and the technology stack.",             href: "/docs/architecture" },
+  { title: "eBPF capture",   desc: "Capture API traffic at the kernel — including TLS.",         href: "/docs/ebpf-agent" },
+  { title: "API inventory",  desc: "Endpoint discovery and sensitive-data classification.",      href: "/docs/inventory" },
+  { title: "Scanner engine", desc: "OWASP-mapped test suites and how they run.",                 href: "/docs/scanner" },
+  { title: "Security",       desc: "RBAC, redaction, and scan-time protections.",                href: "/docs/security" },
 ]
 
 function DocsDropdown() {
@@ -104,7 +104,7 @@ export function LandingNavbar() {
           <div className="hidden items-center gap-6 lg:flex">
             <DocsDropdown />
             <Link
-              href="/resources#blog"
+              href="/blog"
               className="text-sm text-slate-400 transition-colors hover:text-slate-100"
             >
               Blog
@@ -165,7 +165,7 @@ export function LandingNavbar() {
           <div className="flex flex-col gap-1">
             {[
               { label: "Docs",      href: "/docs" },
-              { label: "Blog",      href: "/resources#blog" },
+              { label: "Blog",      href: "/blog" },
               { label: "Dashboard", href: "/dashboard" },
             ].map((link) => (
               <Link

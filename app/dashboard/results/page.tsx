@@ -23,7 +23,7 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {
-  AlertTriangle, Ban, Bug, Check, CheckCircle2,
+  AlertTriangle, Ban, Boxes, Bug, Check, CheckCircle2,
   ChevronDown, ChevronLeft, ChevronRight, Clock,
   Code2, Copy, ExternalLink, FilterX, Globe,
   Loader2, Play, Radio, RefreshCcw, RotateCcw,
@@ -168,6 +168,7 @@ function ResultsPageContent() {
   const initialPage    = useMemo(() => parsePage(searchParams.get("page")), [searchParams])
   const initialLimit   = useMemo(() => parseLimit(searchParams.get("limit")), [searchParams])
   const initialInvId   = useMemo(() => searchParams.get("inventory_id") || "", [searchParams])
+  const initialSuiteId = useMemo(() => searchParams.get("suite_id") || "", [searchParams])
   const initialTab     = useMemo(() => searchParams.get("tab") === "jobs" ? "jobs" : "results", [searchParams])
 
   // ── Results tab state ──────────────────────────────────────────────────────
@@ -177,6 +178,7 @@ function ResultsPageContent() {
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [limit, setLimit]           = useState(initialLimit)
   const [inventoryId, setInventoryId] = useState(initialInvId)
+  const [suiteId, setSuiteId] = useState(initialSuiteId)
   const [resultsLoading, setResultsLoading] = useState(true)
   const [resultsError, setResultsError]     = useState<string | null>(null)
   const [copiedId, setCopiedId]     = useState<string | null>(null)
@@ -200,10 +202,11 @@ function ResultsPageContent() {
     if (currentPage > 1) p.set("page", currentPage.toString())
     if (limit !== "10") p.set("limit", limit)
     if (inventoryId) p.set("inventory_id", inventoryId)
+    if (suiteId) p.set("suite_id", suiteId)
     const next = p.toString()
     if (next === searchParams.toString()) return
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false })
-  }, [activeTab, currentPage, inventoryId, limit, pathname, router, searchParams])
+  }, [activeTab, currentPage, inventoryId, suiteId, limit, pathname, router, searchParams])
 
   // ── Endpoints ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -222,6 +225,7 @@ function ResultsPageContent() {
     try {
       const q = new URLSearchParams({ page: currentPage.toString(), limit })
       if (inventoryId) q.set("inventory_id", inventoryId)
+      if (suiteId) q.set("suite_id", suiteId)
       const r = await apiFetch<{
         data: RawScanResult[]; total: number; page: number; limit: number; total_pages: number; offset: number
       }>(`/scan-results?${q}`)
@@ -234,10 +238,10 @@ function ResultsPageContent() {
     } finally {
       setResultsLoading(false)
     }
-  }, [currentPage, inventoryId, limit])
+  }, [currentPage, inventoryId, suiteId, limit])
 
   useEffect(() => { fetchResults() }, [fetchResults])
-  useEffect(() => { setCurrentPage(1) }, [inventoryId, limit])
+  useEffect(() => { setCurrentPage(1) }, [inventoryId, suiteId, limit])
 
   // ── Jobs fetch ─────────────────────────────────────────────────────────────
   const fetchJobs = useCallback(async () => {
@@ -451,6 +455,15 @@ function ResultsPageContent() {
                   <Button variant="ghost" size="sm" onClick={() => setInventoryId("")} className="text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10">
                     <FilterX className="mr-2 size-4" />Clear
                   </Button>
+                )}
+                {suiteId && (
+                  <div className="flex items-center gap-2 text-xs bg-rose-500/10 border border-rose-500/20 text-rose-300 px-3 py-1.5 rounded-lg">
+                    <Boxes className="size-3.5" />
+                    <span>Suite {suiteId.slice(-6)}</span>
+                    <button onClick={() => setSuiteId("")} className="hover:text-rose-100" aria-label="Clear suite filter">
+                      <FilterX className="size-3.5" />
+                    </button>
+                  </div>
                 )}
                 {selectedEndpoint && (
                   <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">

@@ -1,5 +1,5 @@
 import { Github } from "lucide-react"
-import { API_BASE_URL } from "@/lib/config"
+import { getApiBaseUrl } from "@/lib/config"
 
 function GoogleIcon() {
   return (
@@ -12,7 +12,7 @@ function GoogleIcon() {
 // Full-page navigation to the backend OAuth start endpoint (not fetch), so the
 // provider redirect flow and HttpOnly cookies work correctly.
 export function OAuthButtons() {
-  const start = (provider: string) => `${API_BASE_URL}/auth/oauth/${provider}`
+  const start = (provider: string) => `${getApiBaseUrl()}/auth/oauth/${provider}`
   return (
     <div className="grid grid-cols-2 gap-3">
       <a

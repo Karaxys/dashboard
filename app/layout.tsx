@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Script from "next/script";
 import { Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -35,6 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      {/* Runtime backend config — must run before the app hydrates so client
+          fetches resolve the correct API URL on any host. See app/config.js. */}
+      <Script src="/config.js" strategy="beforeInteractive" />
       <body className={`${outfit.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider
           attribute="class"

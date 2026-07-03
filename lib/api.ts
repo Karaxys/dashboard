@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./config"
+import { getApiBaseUrl } from "./config"
 
 export class ApiError extends Error {
   status: number
@@ -29,7 +29,7 @@ export function setRefreshHandler(handler: (() => Promise<string | null>) | null
 
 function buildUrl(path: string): string {
   if (/^https?:\/\//.test(path)) return path
-  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`
+  return `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`
 }
 
 async function readError(res: Response): Promise<string> {

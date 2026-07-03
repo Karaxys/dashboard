@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
-import { API_BASE_URL } from "./config"
+import { getApiBaseUrl } from "./config"
 import { setAccessToken, getAccessToken, setRefreshHandler, ApiError } from "./api"
 
 export interface AuthUser {
@@ -39,7 +39,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 async function postAuth(path: string, body?: unknown): Promise<Response> {
-  return fetch(`${API_BASE_URL}${path}`, {
+  return fetch(`${getApiBaseUrl()}${path}`, {
     method: "POST",
     credentials: "include",
     headers: body ? { "Content-Type": "application/json" } : undefined,

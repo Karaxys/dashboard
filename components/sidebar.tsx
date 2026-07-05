@@ -105,6 +105,17 @@ const data = {
       ],
     },
     {
+      title: "Vanguard",
+      url: "#",
+      icon: Crosshair,
+      items: [
+        {
+          title: "Sessions",
+          url: "/dashboard/agentic",
+        },
+      ],
+    },
+    {
       title: "Settings",
       url: "#",
       icon: Settings2,

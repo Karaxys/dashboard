@@ -113,6 +113,10 @@ const data = {
           title: "Sessions",
           url: "/dashboard/agentic",
         },
+        {
+          title: "Policy",
+          url: "/dashboard/agentic/policy",
+        },
       ],
     },
     {

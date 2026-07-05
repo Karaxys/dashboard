@@ -16,6 +16,14 @@ import {
 } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 
+interface HTTPCall {
+  method: string
+  host: string
+  path?: string
+  status?: number
+  at: string
+}
+
 interface AgentEvent {
   event_id: string
   event_type: string
@@ -27,6 +35,7 @@ interface AgentEvent {
   guardrail_decision?: string
   risk_score: number
   ebpf_correlated: boolean
+  ebpf_http_calls?: HTTPCall[]
   occurred_at: string
 }
 
@@ -114,7 +123,7 @@ export default function AgentSessionPage() {
             No events recorded for this session.
           </div>
         ) : (
-          <div className="relative space-y-3 before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-px before:bg-white/10">
+          <div className="relative space-y-3 before:absolute before:left-4.75 before:top-2 before:bottom-2 before:w-px before:bg-white/10">
             {events.map(ev => {
               const m = meta(ev.event_type)
               const Icon = m.icon
@@ -141,6 +150,18 @@ export default function AgentSessionPage() {
                       )}
                       {ev.tool_output && (
                         <pre className="p-2 rounded-lg bg-black/30 border border-white/5 font-mono text-xs text-emerald-300/80 whitespace-pre-wrap break-all max-h-32 overflow-auto">{ev.tool_output}</pre>
+                      )}
+                      {ev.ebpf_http_calls && ev.ebpf_http_calls.length > 0 && (
+                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 space-y-1">
+                          <p className="text-xs font-semibold text-amber-400/90">Observed at the kernel</p>
+                          {ev.ebpf_http_calls.map((c, idx) => (
+                            <div key={idx} className="flex items-center gap-2 font-mono text-xs text-amber-200/80">
+                              <span className="font-bold text-amber-300">{c.method}</span>
+                              <span className="truncate">{c.host}{c.path}</span>
+                              {c.status ? <span className="ml-auto text-slate-400">{c.status}</span> : null}
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </CardContent>
                   </Card>

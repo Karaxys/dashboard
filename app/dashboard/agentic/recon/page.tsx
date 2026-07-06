@@ -33,6 +33,7 @@ interface Probe {
   verdict: string
   deterministic_verdict: string
   judge_verdict?: string
+  judge_reasoning?: string
   kernel_corroborated?: boolean
   severity: string
   owasp_asi_tags?: string[]
@@ -52,6 +53,18 @@ const sevColor = (s: string) => ({
   medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 }[s?.toLowerCase()] ?? "bg-slate-500/10 text-slate-400 border-slate-500/20")
+
+// verdictMeta distinguishes a genuine defense (blocked: the target responded
+// and the attack's assertions didn't match) from an inconclusive probe (the
+// target was never actually reached — DNS/connection/timeout failure — which
+// says nothing about security posture and must not read as "defended".
+function verdictMeta(v: string) {
+  switch (v) {
+    case "success": return { label: "VULNERABLE", card: "border-rose-500/20 bg-rose-500/[0.03]", badge: "bg-rose-500/10 text-rose-400 border-rose-500/20" }
+    case "blocked": return { label: "DEFENDED", card: "border-white/5 bg-black/20", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" }
+    default: return { label: "INCONCLUSIVE", card: "border-amber-500/10 bg-amber-500/[0.02]", badge: "bg-amber-500/10 text-amber-400 border-amber-500/20" }
+  }
+}
 
 const statusColor = (s: string) => ({
   queued: "bg-slate-500/10 text-slate-400 border-slate-500/20",
@@ -165,7 +178,7 @@ export default function ReconPage() {
                 ))}
               </div>
             </div>
-            <div className="flex-[2]">
+            <div className="flex-2">
               <label className="text-xs text-muted-foreground mb-1 block">Target URL</label>
               <Input placeholder="https://target.example/endpoint" value={url}
                 onChange={e => setUrl(e.target.value)}
@@ -200,7 +213,7 @@ export default function ReconPage() {
               return (
                 <Card key={job.id} className="bg-black/20 border-white/10">
                   <CardContent className="p-0">
-                    <button onClick={() => toggle(job.id)} className="w-full flex items-center gap-3 p-4 text-left hover:bg-white/[0.02]">
+                    <button onClick={() => toggle(job.id)} className="w-full flex items-center gap-3 p-4 text-left hover:bg-white/2">
                       {open ? <ChevronDown className="size-4 text-muted-foreground shrink-0" /> : <ChevronRight className="size-4 text-muted-foreground shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -225,12 +238,12 @@ export default function ReconPage() {
                         ) : probes[job.id].length === 0 ? (
                           <p className="text-sm text-muted-foreground text-center py-4">No probe records.</p>
                         ) : (
-                          probes[job.id].map(p => (
-                            <div key={p.id} className={`rounded-lg border p-3 ${p.verdict === "success" ? "border-rose-500/20 bg-rose-500/[0.03]" : "border-white/5 bg-black/20"}`}>
+                          probes[job.id].map(p => {
+                            const meta = verdictMeta(p.verdict)
+                            return (
+                            <div key={p.id} className={`rounded-lg border p-3 ${meta.card}`}>
                               <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                                <Badge variant="outline" className={`text-xs ${p.verdict === "success" ? "bg-rose-500/10 text-rose-400 border-rose-500/20" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"}`}>
-                                  {p.verdict === "success" ? "VULNERABLE" : "DEFENDED"}
-                                </Badge>
+                                <Badge variant="outline" className={`text-xs ${meta.badge}`}>{meta.label}</Badge>
                                 <span className="text-xs font-medium text-slate-300">{p.pack_name}</span>
                                 {p.turn_index > 0 && <span className="text-xs text-muted-foreground">turn {p.turn_index + 1}</span>}
                                 <Badge variant="outline" className={`text-xs ${sevColor(p.severity)}`}>{p.severity}</Badge>
@@ -242,13 +255,16 @@ export default function ReconPage() {
                                 ))}
                               </div>
                               <p className="text-xs text-muted-foreground font-mono truncate">{p.payload}</p>
+                              {p.verdict === "inconclusive" && p.judge_reasoning && (
+                                <p className="text-xs text-amber-400/80 mt-1.5 font-mono truncate">⚠ {p.judge_reasoning}</p>
+                              )}
                               {p.verdict === "success" && p.remediation && (
                                 <p className="text-xs text-slate-400 mt-1.5 flex items-start gap-1.5">
                                   <ShieldCheck className="size-3.5 text-emerald-400 mt-0.5 shrink-0" /> {p.remediation}
                                 </p>
                               )}
                             </div>
-                          ))
+                          )})
                         )}
                       </div>
                     )}

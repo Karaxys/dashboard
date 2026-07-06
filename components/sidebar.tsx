@@ -125,6 +125,10 @@ const data = {
           title: "Policy",
           url: "/dashboard/agentic/policy",
         },
+        {
+          title: "Install Shield",
+          url: "/dashboard/agentic/install",
+        },
       ],
     },
     {

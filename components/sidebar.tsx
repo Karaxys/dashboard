@@ -118,6 +118,10 @@ const data = {
           url: "/dashboard/agentic/findings",
         },
         {
+          title: "Recon",
+          url: "/dashboard/agentic/recon",
+        },
+        {
           title: "Policy",
           url: "/dashboard/agentic/policy",
         },

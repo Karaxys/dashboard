@@ -7,7 +7,9 @@ FROM cgr.dev/chainguard/node:latest-dev AS deps
 USER root
 WORKDIR /app
 
-RUN npm install -g bun
+# npm >= 12 blocks install scripts by default, which leaves bun's launcher
+# broken ("Bun's postinstall script was not run"). Opt this one package in.
+RUN npm install -g --allow-scripts=bun bun
 
 # Only package manifests here, so this layer (the slow install) is cached and
 # reused across builds until dependencies actually change.

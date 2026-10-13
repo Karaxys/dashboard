@@ -82,6 +82,7 @@ interface ApiInventory {
 interface EndpointDetails extends ApiInventory {
   SampleHeaders?: Record<string, string[]>
   SampleReqBody?: string
+  captured_auth_available?: boolean
 }
 
 interface TestCase {
@@ -91,6 +92,7 @@ interface TestCase {
   desc: string
   category: string
   requiresAttackerToken?: boolean
+  requiresVictimToken?: boolean
 }
 
 interface TestTypeMeta {
@@ -99,6 +101,8 @@ interface TestTypeMeta {
   severity: string
   description: string
   requires_attacker_auth: boolean
+  requires_victim_auth?: boolean
+  requires_distinct_principals?: boolean
 }
 
 interface SuitePreset {
@@ -112,14 +116,14 @@ interface SuitePreset {
 // live registry (/scan/test-types) is merged on top so community/new templates
 // appear automatically.
 const STATIC_TEST_CASES: TestCase[] = [
-  { id: "BOLA", label: "BOLA", fullLabel: "Broken Object Level Authorization", desc: "Check if User B can access User A's data via token swap.", category: "Authorization", requiresAttackerToken: true },
-  { id: "BFLA", label: "BFLA", fullLabel: "Broken Function Level Authorization", desc: "Check if a standard user can perform privileged actions via method swap.", category: "Authorization" },
+  { id: "BOLA", label: "BOLA", fullLabel: "Broken Object Level Authorization", desc: "Check if User B can access User A's data via token swap.", category: "Authorization", requiresAttackerToken: true, requiresVictimToken: true },
+  { id: "BFLA", label: "BFLA", fullLabel: "Broken Function Level Authorization", desc: "Check if a standard user can perform privileged actions via method swap.", category: "Authorization", requiresAttackerToken: true, requiresVictimToken: true },
   { id: "BROKEN_USER_AUTH", label: "Broken Auth", fullLabel: "Broken User Authentication", desc: "Check if endpoint allows anonymous access.", category: "Authentication" },
-  { id: "BOLA_PARAMETER_POLLUTION", label: "Param Pollution", fullLabel: "BOLA Parameter Pollution", desc: "Send duplicate IDs to confuse auth middleware.", category: "Authorization", requiresAttackerToken: true },
-  { id: "BOLA_CHAINED_ENUMERATION", label: "BOLA Chained", fullLabel: "BOLA via Chained Object-ID Enumeration", desc: "Extract an object ID from a listing, then read it directly with attacker creds.", category: "Authorization", requiresAttackerToken: true },
+  { id: "BOLA_PARAMETER_POLLUTION", label: "Param Pollution", fullLabel: "BOLA Parameter Pollution", desc: "Send duplicate IDs to confuse auth middleware.", category: "Authorization", requiresAttackerToken: true, requiresVictimToken: true },
+  { id: "BOLA_CHAINED_ENUMERATION", label: "BOLA Chained", fullLabel: "BOLA via Chained Object-ID Enumeration", desc: "Extract an object ID from a listing, then read it directly with attacker creds.", category: "Authorization", requiresAttackerToken: true, requiresVictimToken: true },
   { id: "SWAGGER_CHECK", label: "Swagger", fullLabel: "Swagger/OpenAPI Exposure", desc: "Find hidden API documentation endpoints.", category: "Information" },
-  { id: "JWT_NONE_ALGO", label: "JWT None", fullLabel: "JWT None Algorithm Attack", desc: "Check if server accepts unsigned JWT (alg: none).", category: "Authentication" },
-  { id: "JWT_INVALID_SIGNATURE", label: "JWT Sig", fullLabel: "JWT Invalid Signature", desc: "Check if server verifies cryptographic signature.", category: "Authentication" },
+  { id: "JWT_NONE_ALGO", label: "JWT None", fullLabel: "JWT None Algorithm Attack", desc: "Check if server accepts unsigned JWT (alg: none).", category: "Authentication", requiresVictimToken: true },
+  { id: "JWT_INVALID_SIGNATURE", label: "JWT Sig", fullLabel: "JWT Invalid Signature", desc: "Check if server verifies cryptographic signature.", category: "Authentication", requiresVictimToken: true },
   { id: "OPEN_REDIRECT", label: "Redirect", fullLabel: "Open Redirect", desc: "Check if URL params can redirect to malicious sites.", category: "Injection" },
   { id: "REFLECTED_XSS", label: "Reflected XSS", fullLabel: "Reflected Cross-Site Scripting", desc: "Inject a script marker and check for unescaped reflection.", category: "Injection" },
   { id: "SQL_INJECTION", label: "SQL Injection", fullLabel: "Error-Based SQL Injection", desc: "Inject SQL metacharacters and detect leaked database errors.", category: "Injection" },
@@ -165,7 +169,8 @@ function mergeTestTypes(metas: TestTypeMeta[]): TestCase[] {
       fullLabel: known?.fullLabel ?? humanized,
       desc: meta.description || known?.desc || "",
       category: known?.category ?? CATEGORY_LABELS[meta.category] ?? "Other",
-      requiresAttackerToken: meta.requires_attacker_auth,
+      requiresAttackerToken: meta.requires_attacker_auth || known?.requiresAttackerToken,
+      requiresVictimToken: meta.requires_victim_auth || known?.requiresVictimToken,
     }
   })
 }
@@ -293,6 +298,9 @@ function ScanPageContent() {
   const needsAttackerToken = mode === "single"
     ? (selectedTestCase?.requiresAttackerToken ?? false)
     : true // suites may include BOLA-family; attacker token is optional but surfaced
+  const capturedOwnerAvailable = selectedEndpointDetails?.captured_auth_available ?? false
+  const requiresVictimToken = mode === "single" && (selectedTestCase?.requiresVictimToken ?? false)
+  const needsVictimToken = requiresVictimToken && !capturedOwnerAvailable
   const needsAttackMethod = mode === "single" && testType === "BFLA"
 
   const buildAuthContexts = useCallback(() => {
@@ -334,6 +342,7 @@ function ScanPageContent() {
           test_type: testType,
           attack_method: needsAttackMethod ? attackMethod : "",
           attacker_token: needsAttackerToken ? attackerToken : "",
+          auth_contexts: buildAuthContexts(),
         }),
       })
       setScanJobId(job.job_id); setScanStatus(job.status)
@@ -384,7 +393,12 @@ function ScanPageContent() {
     if (mode === "suite") handleStartSuite(); else handleStartSingle()
   }
 
-  const canLaunch = mode === "suite" ? !!(inventoryId && suitePreset) : !!(inventoryId && testType)
+  const missingPrincipals =
+    (mode === "single" && needsAttackerToken && !attackerToken.trim()) ||
+    (mode === "single" && needsVictimToken && !victimToken.trim())
+  const canLaunch = mode === "suite"
+    ? !!(inventoryId && suitePreset)
+    : !!(inventoryId && testType) && !missingPrincipals
 
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const copyToClipboard = (text: string, id: string) => {
@@ -579,15 +593,29 @@ function ScanPageContent() {
                         className="h-16 resize-none bg-black/30 border-white/10 text-slate-200 font-mono text-xs placeholder:text-muted-foreground/50"
                       />
                     </div>
-                    {mode === "suite" && (
+                    {(mode === "suite" || requiresVictimToken) && (
                       <div className="space-y-2">
-                        <Label className="text-xs text-slate-400">Victim Token (optional)</Label>
+                        <Label className="text-xs text-slate-400">
+                          Victim Token{requiresVictimToken ? (needsVictimToken ? " (required)" : " (auto-detected)") : " (optional)"}
+                        </Label>
                         <Textarea
+                          required={needsVictimToken}
                           value={victimToken}
                           onChange={(e) => setVictimToken(e.target.value)}
-                          placeholder="Token of the target user (for object-level tests)"
+                          placeholder={capturedOwnerAvailable
+                            ? "Auto-detected from the captured request — leave empty to use it, or paste a token to override"
+                            : "Token of the object owner (must belong to a DIFFERENT user than the attacker token)"}
                           className="h-16 resize-none bg-black/30 border-white/10 text-slate-200 font-mono text-xs placeholder:text-muted-foreground/50"
                         />
+                        {requiresVictimToken && (
+                          <p className="text-[11px] leading-relaxed text-muted-foreground">
+                            {capturedOwnerAvailable
+                              ? "Using the owner credential sealed with this endpoint's captured request. Paste a token above to override it."
+                              : missingPrincipals && !victimToken.trim()
+                                ? "This test is refused without the owner's token: replaying the owner's own request with the owner's own token always succeeds and produced false positives."
+                                : "The attacker and victim tokens must be different. Captured traffic stores Authorization headers redacted, so paste the owner's token here."}
+                          </p>
+                        )}
                       </div>
                     )}
                     {(needsAttackMethod || mode === "suite") && (

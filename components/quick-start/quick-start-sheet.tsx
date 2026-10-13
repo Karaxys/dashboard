@@ -90,6 +90,7 @@ function buildCommand(id: ConnectorID, ingestURL: string, token: string): string
         "  --pid host \\",
         "  -v /sys/fs/bpf:/sys/fs/bpf \\",
         "  -v /sys/kernel/debug:/sys/kernel/debug:ro \\",
+        "  -v /sys/kernel/tracing:/sys/kernel/tracing:ro \\",
         `  -e KARAXYS_INGEST_URL="${ingestURL}" \\`,
         `  -e KARAXYS_ACCOUNT_TOKEN="${token}" \\`,
         "  ghcr.io/karaxys/capture:latest",
